@@ -16,6 +16,9 @@ build/
 .vite/
 .turbo/
 
+# TanStack Start / Router codegen
+routeTree.gen.ts
+
 # Go
 services/*/bin/
 services/*/tmp/

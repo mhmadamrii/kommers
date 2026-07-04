@@ -1,6 +1,8 @@
 # kommers — Development Process
 
-> Project purpose, philosophy, and engineering priorities are defined in [`guide.md`](./guide.md). Read that first. This file defines *how* we execute against it: phases, scope per phase, and definition of done.
+> Project purpose, philosophy, and engineering priorities are defined in [`guides/guide.md`](./guides/guide.md). Read that first. This file defines *how* we execute against it: phases, scope per phase, and definition of done.
+>
+> System architecture layout is documented in [`guides/architecture.md`](./guides/architecture.md).
 
 ## Working Agreement
 

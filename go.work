@@ -1,0 +1,13 @@
+go 1.26
+
+use (
+	./services/auth
+	./services/catalog
+	./services/inventory
+	./services/cart
+	./services/checkout
+	./services/payment
+	./services/order
+	./services/notification
+	./services/search
+)

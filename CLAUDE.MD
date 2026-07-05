@@ -51,17 +51,17 @@ Progress:
 - [x] Service skeleton: `cmd/server/main.go`, config, GORM+Postgres wiring, `/healthz` + `/readyz`, structured logging (slog), Prometheus metrics, Dockerfile — verified `go build`/`go vet` clean
 - [x] `internal/observability/tracing.go` — no-op stub only; real OTel SDK deferred to Phase 10, added once for all services
 - [ ] Not yet runtime-verified against live Postgres (compose stack managed by user via podman, not run from this session)
-- [ ] Register endpoint (bcrypt password hashing)
-- [ ] Login endpoint (JWT access + refresh token issuance)
-- [ ] Refresh endpoint (rotation + reuse-detection/revocation)
-- [ ] Logout endpoint (refresh token revocation)
-- [ ] RBAC middleware (role claim check)
-- [ ] Rate limiting on `/register` + `/login` (Redis, fail-closed per docs/auth-service.md)
-- [ ] JWKS endpoint (`GET /.well-known/jwks.json`)
-- [ ] Unit tests for token issuance/rotation logic
+- [x] Register endpoint (bcrypt password hashing)
+- [x] Login endpoint (JWT access + refresh token issuance)
+- [x] Refresh endpoint (rotation + reuse-detection/revocation)
+- [x] Logout endpoint (refresh token revocation)
+- [x] RBAC middleware (role claim check) — `internal/middleware/auth.go`, not yet wired to a protected route (none exist yet in this service)
+- [x] Rate limiting on `/register` + `/login` (Redis, fail-closed per docs/auth-service.md)
+- [x] JWKS endpoint (`GET /.well-known/jwks.json`)
+- [x] Unit tests for token issuance/rotation logic
 - [ ] `packages/web` login/register routes wired to real endpoints
 
-Next concrete step when resuming: implement register/login/JWT/RBAC logic in `internal/service/` + `internal/handler/`.
+Next concrete step when resuming: runtime-verify against live Postgres/Redis (compose stack), then wire `packages/web` login/register routes to real endpoints.
 
 ## Phase 2 — Catalog Service
 

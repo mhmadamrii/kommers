@@ -22,6 +22,7 @@ routeTree.gen.ts
 # Go
 services/*/bin/
 services/*/tmp/
+services/*/keys/
 *.exe
 *.exe~
 *.dll

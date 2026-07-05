@@ -1,0 +1,238 @@
+openapi: 3.0.3
+info:
+  title: Auth Service
+  description: |
+    Identity and access control for kommers. Issues RS256-signed JWTs other
+    services verify locally via JWKS — no callback to this service per request.
+    See docs/auth-service.md for full architecture/tradeoffs.
+  version: "1.0"
+servers:
+  - url: http://localhost:8080
+    description: Local dev
+
+tags:
+  - name: auth
+  - name: ops
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailPasswordRequest"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Missing email/password or malformed body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate limit exceeded (per-IP, see guides/rate-limiting.md)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: Rate limiter (Redis) unavailable — fails closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Exchange credentials for an access + refresh token pair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailPasswordRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate limit exceeded (per-IP, see guides/rate-limiting.md)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: Rate limiter (Redis) unavailable — fails closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Rotate a refresh token for a new access + refresh pair
+      description: |
+        Presenting a refresh token that was already rotated away (reused/stolen)
+        revokes the entire token family and forces re-login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: New token pair issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          description: Invalid, expired, or reused (theft-detected) refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Revoke a refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "204":
+          description: Refresh token revoked
+        "401":
+          description: Unknown refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /.well-known/jwks.json:
+    get:
+      tags: [auth]
+      summary: Public signing key set (JWKS)
+      description: |
+        Other services fetch and cache this to verify access tokens locally,
+        without calling Auth Service per request.
+      responses:
+        "200":
+          description: JSON Web Key Set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JWKS"
+
+  /healthz:
+    get:
+      tags: [ops]
+      summary: Liveness — process is up
+      responses:
+        "200":
+          description: Alive
+
+  /readyz:
+    get:
+      tags: [ops]
+      summary: Readiness — dependencies (Postgres) reachable
+      responses:
+        "200":
+          description: Ready
+        "503":
+          description: Not ready (e.g. database unreachable)
+
+components:
+  schemas:
+    EmailPasswordRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    RefreshTokenRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [customer, admin]
+
+    TokenPair:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Short-lived RS256 JWT (default 15m TTL)
+        refresh_token:
+          type: string
+          description: Opaque token, rotated on every use (default 30d TTL)
+
+    JWKS:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            properties:
+              kty: { type: string, example: RSA }
+              use: { type: string, example: sig }
+              kid: { type: string, example: auth-key-1 }
+              alg: { type: string, example: RS256 }
+              n: { type: string }
+              e: { type: string }
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string

@@ -77,6 +77,8 @@ Endpoints:
 
 **Refresh token rotation.** Every refresh call issues a new refresh token and invalidates the old one. If an old (already-rotated) refresh token is presented again, that's a signal of theft — the whole token family is revoked, forcing re-login. Adds bookkeeping (token family tracking) over a static long-lived refresh token, but it's the standard defense against stolen-refresh-token replay.
 
+**Signing key: generate-if-missing, local dev only.** `internal/security/keys.go` generates a 2048-bit RSA key on first boot if `JWT_PRIVATE_KEY_PATH` doesn't exist, so `go run`/single-container dev works with zero setup. This is **not safe for the N-replica horizontal scaling this doc promises** — each replica would generate its own key and none could verify another's tokens. Any multi-replica deployment must mount the same key file (or inject it from a shared secret store, e.g. a Kubernetes Secret) so `JWT_PRIVATE_KEY_PATH` resolves to identical bytes on every instance. Revisit when Phase 10 introduces the API Gateway / k8s move.
+
 ---
 
 ## Failure Cases

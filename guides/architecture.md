@@ -133,6 +133,22 @@ Checkout is synchronous where correctness matters immediately (stock reservation
 
 ---
 
+## Local Infra Access
+
+Infra runs via `infra/docker-compose.yml` under podman (`podman-compose up -d` from `infra/`), not `brew services`. To reach a container's shell tools directly (equivalent of `brew services start postgresql` + `psql postgres`):
+
+```sh
+# Postgres — container is infra_postgres_1, creds/db match docker-compose.yml defaults
+podman exec -it infra_postgres_1 psql -U kommers -d kommers_auth
+
+# Redis — container is infra_redis_1
+podman exec -it infra_redis_1 redis-cli
+```
+
+`-it` needs a real terminal — run these in your own shell, not through an automated/non-TTY session. Once inside `psql`: `\dt` lists tables, `\l` lists databases (one per service, per `infra/postgres/init.sql`).
+
+---
+
 ## Current State
 
-Only `packages/web` has actual code (TanStack Start scaffold). All `services/*` are empty Go modules waiting on Phase 1 (Auth). See `CLAUDE.MD` for the live phase checklist.
+`services/auth` has real code (Phase 1, in progress — register/login/refresh/logout/JWKS wired, see `CLAUDE.MD` for the live checklist). All other `services/*` are still empty Go modules waiting their turn. `packages/web` is still just the TanStack Start scaffold, not yet wired to auth.

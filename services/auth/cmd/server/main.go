@@ -56,14 +56,18 @@ func main() {
 	mux.HandleFunc("GET /readyz", health.Readyz)
 	mux.Handle("GET /metrics", metrics.Handler())
 	mux.HandleFunc("GET /.well-known/jwks.json", jwksHandler.ServeHTTP)
+	mux.HandleFunc("GET /docs", handler.ServeAPIDocs)
+	mux.HandleFunc("GET /openapi.yaml", handler.ServeOpenAPISpec)
 
 	mux.HandleFunc("POST /auth/register", appmiddleware.RateLimit(registerLimiter, "register", authHandler.Register))
 	mux.HandleFunc("POST /auth/login", appmiddleware.RateLimit(loginLimiter, "login", authHandler.Login))
 	mux.HandleFunc("POST /auth/refresh", authHandler.Refresh)
 	mux.HandleFunc("POST /auth/logout", authHandler.Logout)
 
+	handler := appmiddleware.CorrelationID(appmiddleware.AccessLog(logger, metrics.Middleware(mux)))
+
 	logger.Info("starting server", "port", cfg.Port)
-	if err := http.ListenAndServe(":"+cfg.Port, metrics.Middleware(mux)); err != nil {
+	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
 		logger.Error("server stopped", "error", err)
 		os.Exit(1)
 	}

@@ -48,9 +48,9 @@ Data layer decision: GORM (not sqlc/pgx) — lighter local toolchain, no extra C
 Progress:
 
 - [x] `docs/auth-service.md` written
-- [x] Service skeleton: `cmd/server/main.go`, config, GORM+Postgres wiring, `/healthz` + `/readyz`, structured logging (slog), Prometheus metrics, Dockerfile — verified `go build`/`go vet` clean
+- [x] Service skeleton: `cmd/server/main.go`, config, GORM+Postgres wiring, `/healthz` + `/readyz`, structured logging (slog) w/ correlation IDs + access-log middleware, Prometheus metrics, Dockerfile — verified `go build`/`go vet` clean, verified via `podman build`/`podman run` against live Postgres+Redis
 - [x] `internal/observability/tracing.go` — no-op stub only; real OTel SDK deferred to Phase 10, added once for all services
-- [ ] Not yet runtime-verified against live Postgres (compose stack managed by user via podman, not run from this session)
+- [x] Runtime-verified against live Postgres + Redis (podman-compose) — register/login/jwks/refresh-rotate/reuse-detection/logout/rate-limit all smoke-tested, both via `go run` and the built container image
 - [x] Register endpoint (bcrypt password hashing)
 - [x] Login endpoint (JWT access + refresh token issuance)
 - [x] Refresh endpoint (rotation + reuse-detection/revocation)
@@ -59,9 +59,11 @@ Progress:
 - [x] Rate limiting on `/register` + `/login` (Redis, fail-closed per docs/auth-service.md)
 - [x] JWKS endpoint (`GET /.well-known/jwks.json`)
 - [x] Unit tests for token issuance/rotation logic
-- [ ] `packages/web` login/register routes wired to real endpoints
+- [ ] `packages/web` login/register routes wired to real endpoints — deferred, only remaining item for Phase 1 Definition of Done
 
-Next concrete step when resuming: runtime-verify against live Postgres/Redis (compose stack), then wire `packages/web` login/register routes to real endpoints.
+Known limitation to revisit at Phase 10 (k8s): JWT signing key is generate-if-missing per instance (`internal/security/keys.go`) — fine for single-instance local dev, breaks the "stateless, N replicas" scaling claim for real multi-replica deployment unless the key is mounted/shared (see `docs/auth-service.md` Tradeoffs).
+
+Next concrete step when resuming: wire `packages/web` login/register routes to real endpoints — last item before Phase 1 Definition of Done is met and Phase 2 (Catalog Service) can start.
 
 ## Phase 2 — Catalog Service
 

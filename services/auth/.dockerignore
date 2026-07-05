@@ -1,2 +1,6 @@
 .git
 *.md
+keys/
+.env
+.env.*
+!.env.example

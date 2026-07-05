@@ -35,13 +35,33 @@
 - [ ] `.github/workflows`: base CI (lint + build), path-filtered per service
 - [ ] Shared Go libs decision: `services/pkg/` or duplicate per service (decide when 2nd service needs shared code, not before)
 
-## Phase 1 — Auth Service
+## Phase 1 — Auth Service *(in progress)*
 
 Scope: register, login, JWT issuance, refresh token rotation, RBAC.
 
 Interesting topics to document: token rotation, session management, rate limiting.
 
 Frontend: login/register forms in `packages/web`, token storage strategy.
+
+Data layer decision: GORM (not sqlc/pgx) — lighter local toolchain, no extra CLI installs. RS256 JWT signing (asymmetric) so other services verify locally via JWKS, no callback to Auth Service per request. See `docs/auth-service.md` for full reasoning.
+
+Progress:
+
+- [x] `docs/auth-service.md` written
+- [x] Service skeleton: `cmd/server/main.go`, config, GORM+Postgres wiring, `/healthz` + `/readyz`, structured logging (slog), Prometheus metrics, Dockerfile — verified `go build`/`go vet` clean
+- [x] `internal/observability/tracing.go` — no-op stub only; real OTel SDK deferred to Phase 10, added once for all services
+- [ ] Not yet runtime-verified against live Postgres (compose stack managed by user via podman, not run from this session)
+- [ ] Register endpoint (bcrypt password hashing)
+- [ ] Login endpoint (JWT access + refresh token issuance)
+- [ ] Refresh endpoint (rotation + reuse-detection/revocation)
+- [ ] Logout endpoint (refresh token revocation)
+- [ ] RBAC middleware (role claim check)
+- [ ] Rate limiting on `/register` + `/login` (Redis, fail-closed per docs/auth-service.md)
+- [ ] JWKS endpoint (`GET /.well-known/jwks.json`)
+- [ ] Unit tests for token issuance/rotation logic
+- [ ] `packages/web` login/register routes wired to real endpoints
+
+Next concrete step when resuming: implement register/login/JWT/RBAC logic in `internal/service/` + `internal/handler/`.
 
 ## Phase 2 — Catalog Service
 

@@ -3,11 +3,12 @@
   "references": [{ "path": "../api-client" }, { "path": "../ui" }],
   "compilerOptions": {
     "noEmit": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "types": ["vite/client"]
   },
   "include": ["src"],
   "baseUrl": ".",
   "paths": {
-    "@/*": ["./*"]
+    "@/*": ["./src*"]
   }
 }

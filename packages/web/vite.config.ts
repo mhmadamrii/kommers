@@ -10,8 +10,7 @@ export default defineConfig({
   server: { port: 3000 },
   plugins: [tailwindcss(), tanstackStart(), viteReact()],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    // This enables built-in support for path aliases defined in tsconfig.json
+    tsconfigPaths: true,
   },
 });

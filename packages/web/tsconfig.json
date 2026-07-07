@@ -4,11 +4,11 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDir": "src",
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src"],
-  "baseUrl": ".",
-  "paths": {
-    "@/*": ["./src*"]
-  }
+  "include": ["src"]
 }

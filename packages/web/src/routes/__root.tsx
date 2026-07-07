@@ -1,5 +1,9 @@
-import type { ReactNode } from 'react';
 import appCss from '../styles.css?url';
+
+import { useState, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import { CartProvider } from '@/lib/cart-context';
 
 import {
   Outlet,
@@ -21,10 +25,16 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
-    <RootDocument>
-      <Outlet />
-    </RootDocument>
+    <QueryClientProvider client={queryClient}>
+      <CartProvider>
+        <RootDocument>
+          <Outlet />
+        </RootDocument>
+      </CartProvider>
+    </QueryClientProvider>
   );
 }
 

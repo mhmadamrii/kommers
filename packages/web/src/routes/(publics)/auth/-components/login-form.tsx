@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useMutation } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/form-field';
@@ -10,28 +11,26 @@ export function LoginForm() {
   const navigate = useNavigate();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
-      const tokens = await authClient.login({ email, password });
+  const loginMutation = useMutation({
+    mutationFn: authClient.login,
+    onSuccess: (tokens) => {
       setTokens(tokens.access_token, tokens.refresh_token);
       navigate({ to: '/' });
-    } catch (err) {
-      setError(
-        err instanceof AuthApiError
-          ? err.message
-          : 'Something went wrong. Try again.',
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    loginMutation.mutate({ email, password });
   }
+
+  const error =
+    loginMutation.error instanceof AuthApiError
+      ? loginMutation.error.message
+      : loginMutation.error
+        ? 'Something went wrong. Try again.'
+        : null;
 
   return (
     <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
@@ -54,8 +53,8 @@ export function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
       />
       {error && <p className='text-sm text-red-500'>{error}</p>}
-      <Button type='submit' disabled={isSubmitting}>
-        {isSubmitting ? 'Logging in...' : 'Login'}
+      <Button type='submit' disabled={loginMutation.isPending}>
+        {loginMutation.isPending ? 'Logging in...' : 'Login'}
       </Button>
     </form>
   );

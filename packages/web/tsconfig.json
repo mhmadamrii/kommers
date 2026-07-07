@@ -1,12 +1,13 @@
 {
   "extends": "../config/tsconfig/react-library.json",
+  "references": [{ "path": "../api-client" }, { "path": "../ui" }],
   "compilerOptions": {
     "noEmit": true,
     "rootDir": "src"
   },
   "include": ["src"],
-  "references": [
-    { "path": "../api-client" },
-    { "path": "../ui" }
-  ]
+  "baseUrl": ".",
+  "paths": {
+    "@/*": ["./*"]
+  }
 }

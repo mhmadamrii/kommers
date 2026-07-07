@@ -1,18 +1,21 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
+import appCss from '../styles.css?url';
+
 import {
   Outlet,
   createRootRoute,
   HeadContent,
   Scripts,
-} from "@tanstack/react-router";
+} from '@tanstack/react-router';
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Kommers" },
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'Kommers' },
     ],
+    links: [{ rel: 'stylesheet', href: appCss }],
   }),
   component: RootComponent,
 });

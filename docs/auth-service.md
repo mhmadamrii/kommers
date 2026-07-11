@@ -56,6 +56,8 @@ Data access: **GORM** over `gorm.io/driver/postgres`, `AutoMigrate` for schema (
 
 Token signing: **RS256** (asymmetric). Auth Service holds the private key; every other service only needs the public key, fetched from the JWKS endpoint and cached. This means a compromised downstream service can never forge tokens — only Auth Service can sign.
 
+Browser access: CORS middleware with an exact-match origin allowlist, configured via `CORS_ALLOWED_ORIGINS` (comma-separated, default `http://localhost:3000` for the local web dev server). Preflights are answered by the middleware and never reach the mux. `Access-Control-Allow-Credentials` is deliberately never set: tokens travel in the JSON body and `Authorization` header, not cookies, which keeps the CSRF surface minimal. When the API Gateway lands (Phase 10), CORS handling likely moves there and this middleware becomes gateway-internal.
+
 Endpoints:
 
 - `POST /auth/register`

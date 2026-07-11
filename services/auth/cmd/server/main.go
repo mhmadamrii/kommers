@@ -64,7 +64,8 @@ func main() {
 	mux.HandleFunc("POST /auth/refresh", authHandler.Refresh)
 	mux.HandleFunc("POST /auth/logout", authHandler.Logout)
 
-	handler := appmiddleware.CorrelationID(appmiddleware.AccessLog(logger, metrics.Middleware(mux)))
+	handler := appmiddleware.CORS(cfg.CORSAllowedOrigins,
+		appmiddleware.CorrelationID(appmiddleware.AccessLog(logger, metrics.Middleware(mux))))
 
 	logger.Info("starting server", "port", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {

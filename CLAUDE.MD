@@ -59,11 +59,13 @@ Progress:
 - [x] Rate limiting on `/register` + `/login` (Redis, fail-closed per docs/auth-service.md)
 - [x] JWKS endpoint (`GET /.well-known/jwks.json`)
 - [x] Unit tests for token issuance/rotation logic
-- [ ] `packages/web` login/register routes wired to real endpoints — deferred, only remaining item for Phase 1 Definition of Done
+- [x] `packages/web` login/register routes wired to real endpoints — `src/lib/auth-client.ts` (fetch client, `VITE_AUTH_API_URL`) + `src/lib/token-storage.ts` (localStorage) + TanStack Query mutations in the auth forms; required adding CORS middleware to the service (`internal/middleware/cors.go`, `CORS_ALLOWED_ORIGINS` env, unit-tested). Browser-verified end-to-end via headless Chromium: register→auto-login→tokens stored→redirect, fresh login, wrong-password error rendering, disallowed origins get no CORS headers
+
+**Phase 1 Definition of Done met.** Phase 2 (Catalog Service) can start — begin with `docs/catalog-service.md` per Working Agreement.
 
 Known limitation to revisit at Phase 10 (k8s): JWT signing key is generate-if-missing per instance (`internal/security/keys.go`) — fine for single-instance local dev, breaks the "stateless, N replicas" scaling claim for real multi-replica deployment unless the key is mounted/shared (see `docs/auth-service.md` Tradeoffs).
 
-Next concrete step when resuming: wire `packages/web` login/register routes to real endpoints — last item before Phase 1 Definition of Done is met and Phase 2 (Catalog Service) can start.
+Next concrete step when resuming: start Phase 2 (Catalog Service) with `docs/catalog-service.md` — Problem → Requirements → Architecture → Tradeoffs → Failure Cases → Scaling Strategy, per Working Agreement.
 
 ## Phase 2 — Catalog Service
 

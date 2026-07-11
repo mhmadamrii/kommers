@@ -2,7 +2,6 @@ import appCss from '../styles.css?url';
 
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
 import { CartProvider } from '@/lib/cart-context';
 
 import {

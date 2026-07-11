@@ -1,7 +1,7 @@
 import * as React from 'react';
+
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
-
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/form-field';
 import { authClient, AuthApiError } from '@/lib/auth-client';

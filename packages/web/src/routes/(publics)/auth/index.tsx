@@ -1,4 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoginForm } from './-components/login-form';
+import { RegisterForm } from './-components/register-form';
 
 import {
   Card,
@@ -7,10 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-import { LoginForm } from './-components/login-form';
-import { RegisterForm } from './-components/register-form';
 
 export const Route = createFileRoute('/(publics)/auth/')({
   component: RouteComponent,

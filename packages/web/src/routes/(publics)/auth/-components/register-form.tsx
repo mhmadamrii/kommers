@@ -9,10 +9,11 @@ import {
   AuthApiError,
   type EmailPasswordRequest,
 } from '@/lib/auth-client';
-import { setTokens } from '@/lib/token-storage';
+import { useAuthStore } from '@/lib/auth-store';
 
 export function RegisterForm() {
   const navigate = useNavigate();
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
 
@@ -22,7 +23,7 @@ export function RegisterForm() {
       return authClient.login(payload);
     },
     onSuccess: (tokens) => {
-      setTokens(tokens.access_token, tokens.refresh_token);
+      setAuth(tokens, email);
       navigate({ to: '/' });
     },
   });

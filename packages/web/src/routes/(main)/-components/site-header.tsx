@@ -2,8 +2,8 @@ import * as React from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { UserMenu } from '@/components/user-menu';
 
 import { CartSheet } from './cart-sheet';
 import { NotificationsSheet } from './notifications-sheet';
@@ -48,9 +48,7 @@ export function SiteHeader() {
         <div className='flex items-center gap-2'>
           <NotificationsSheet />
           <CartSheet />
-          <Button variant='neutral' asChild>
-            <Link to='/auth'>Account</Link>
-          </Button>
+          <UserMenu />
         </div>
       </div>
     </header>

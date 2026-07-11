@@ -1,5 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { useEffect } from 'react';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuthStore } from '@/lib/auth-store';
 import { LoginForm } from './-components/login-form';
 import { RegisterForm } from './-components/register-form';
 
@@ -16,6 +18,14 @@ export const Route = createFileRoute('/(publics)/auth/')({
 });
 
 function RouteComponent() {
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+
+  // Already logged in — nothing to do on this page.
+  useEffect(() => {
+    if (user) navigate({ to: '/' });
+  }, [user, navigate]);
+
   return (
     <div className='flex min-h-screen items-center justify-center p-4'>
       <Card className='w-full max-w-sm'>

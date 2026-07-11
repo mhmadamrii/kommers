@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProductCard } from '@/components/product-card';
 import { CategoryCard } from '@/components/category-card';
+import { UserMenu } from '@/components/user-menu';
 import { useCart } from '@/lib/cart-context';
 import { fetchCategories, fetchProducts } from '@/lib/catalog-client';
 
@@ -34,9 +34,7 @@ function Home() {
       <header className='flex items-center justify-between'>
         <span className='font-heading text-xl'>kommers</span>
         <div className='flex items-center gap-2'>
-          <Button variant='neutral' asChild>
-            <Link to='/auth'>Login</Link>
-          </Button>
+          <UserMenu />
           <Button asChild>
             <Link to='/products'>Shop now</Link>
           </Button>

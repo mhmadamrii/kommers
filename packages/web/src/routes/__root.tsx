@@ -1,8 +1,9 @@
 import appCss from '../styles.css?url';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CartProvider } from '@/lib/cart-context';
+import { bootstrapAuth } from '@/lib/auth-store';
 
 import {
   Outlet,
@@ -25,6 +26,12 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const [queryClient] = useState(() => new QueryClient());
+
+  // Rotate an expired access token on app load so returning visitors stay
+  // logged in for the refresh token's 30-day lifetime, not 15 minutes.
+  useEffect(() => {
+    void bootstrapAuth();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

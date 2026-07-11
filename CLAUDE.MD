@@ -33,9 +33,9 @@
 - [x] `packages/web` scaffolded on TanStack Start, verified booting
 - [ ] Root `docker-compose.yml`: Postgres, Redis, Kafka, MinIO, Prometheus, Grafana
 - [ ] `.github/workflows`: base CI (lint + build), path-filtered per service
-- [ ] Shared Go libs decision: `services/pkg/` or duplicate per service (decide when 2nd service needs shared code, not before)
+- [x] Shared Go libs decision: `services/pkg/` module created when Catalog (2nd service) needed the same middleware/observability — contains `observability` (logger/metrics/tracing stub), `httpmiddleware` (correlation/accesslog/CORS), `jwtauth` (JWKS client + role middleware, unit-tested). Consumed via go.work locally + `replace ../pkg` for container builds. **Auth still uses its internal copies — migrate to services/pkg in a dedicated refactor commit.**
 
-## Phase 1 — Auth Service *(in progress)*
+## Phase 1 — Auth Service *(done)*
 
 Scope: register, login, JWT issuance, refresh token rotation, RBAC.
 
@@ -65,9 +65,7 @@ Progress:
 
 Known limitation to revisit at Phase 10 (k8s): JWT signing key is generate-if-missing per instance (`internal/security/keys.go`) — fine for single-instance local dev, breaks the "stateless, N replicas" scaling claim for real multi-replica deployment unless the key is mounted/shared (see `docs/auth-service.md` Tradeoffs).
 
-Next concrete step when resuming: start Phase 2 (Catalog Service) with `docs/catalog-service.md` — Problem → Requirements → Architecture → Tradeoffs → Failure Cases → Scaling Strategy, per Working Agreement.
-
-## Phase 2 — Catalog Service *(in progress)*
+## Phase 2 — Catalog Service *(done)*
 
 Scope: categories, variants, images (MinIO), search stub, Redis cache w/ explicit invalidation strategy, pagination, indexing.
 
@@ -77,18 +75,23 @@ Key decisions (full reasoning in `docs/catalog-service.md`): GORM again for cons
 
 Progress:
 
-- [x] `docs/catalog-service.md` written — pending review
-- [x] Infra: MinIO added to `infra/docker-compose.yml`; `kommers_catalog` DB + `pg_trgm` added to `infra/postgres/init.sql` (note: init.sql only runs on a fresh volume — create the DB manually on existing dev volumes)
-- [ ] Service skeleton (health/readyz, logging, metrics, Dockerfile, config)
-- [ ] Categories CRUD + public list
-- [ ] Products CRUD + public list (keyset pagination) + detail by slug
-- [ ] Variants CRUD
-- [ ] Image upload → MinIO
-- [ ] Search stub (`q=`, pg_trgm)
-- [ ] Redis cache-aside + invalidation
-- [ ] JWKS auth middleware for `/admin/*`
-- [ ] Unit tests (pagination cursor, cache invalidation, handlers)
-- [ ] Frontend: product listing + detail pages wired to real API
+- [x] `docs/catalog-service.md` written and reviewed
+- [x] Infra: MinIO added to `infra/docker-compose.yml`; `kommers_catalog` DB + `pg_trgm` added to `infra/postgres/init.sql` (note: init.sql only runs on a fresh volume — service migration also creates extensions idempotently, so existing volumes only need `CREATE DATABASE kommers_catalog`)
+- [x] Service skeleton (health/readyz, logging, metrics, Dockerfile, config) — built on `services/pkg`; Dockerfile builds from repo root (`podman build -f services/catalog/Dockerfile .`), container runtime-verified against live infra
+- [x] Categories CRUD + public list (delete guarded when category still has products)
+- [x] Products CRUD + public list (keyset pagination, active-only, draft excluded) + detail by slug
+- [x] Variants CRUD (jsonb attributes, nullable price override → base price fallback)
+- [x] Image upload → MinIO (content-type sniffed server-side, public-read bucket, object key only in Postgres)
+- [x] Search stub (`q=`, ILIKE + pg_trgm GIN index)
+- [x] Redis cache-aside + invalidation (product detail + category list; delete-on-write incl. old slug on rename; fail-open verified)
+- [x] JWKS auth middleware for `/admin/*` (`services/pkg/jwtauth`) — 401 no token, 403 wrong role, verified against live Auth Service
+- [x] Unit tests: cursor roundtrip/tamper, cache fail-open, jwtauth (valid/expired/wrong-key/unknown-kid/role gate/JWKS-down fail-closed), CORS
+- [x] Runtime-verified: 29-check API smoke suite (authz, CRUD, pagination overlap/last-page, search, cache hit+invalidation, slug-rename cache death, image upload → MinIO URL 200, 415 on fake image, 409s) + 17-check headless-browser suite against the real frontend
+- [x] Frontend: product listing (infinite load-more) + detail (gallery, variants) + categories + search + home wired to real API; product/category mocks deleted; `VITE_CATALOG_API_URL` added
+
+Phase 2 Definition of Done met. No admin UI yet — admin CRUD is API-only (JWT via curl); build an admin surface only if a later phase needs it.
+
+Next concrete step: Phase 3 (Cart Service) — start with `docs/cart-service.md`.
 
 ## Phase 3 — Cart Service
 

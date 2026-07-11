@@ -5,17 +5,18 @@ import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/form-field';
 import { authClient, AuthApiError } from '@/lib/auth-client';
-import { setTokens } from '@/lib/token-storage';
+import { useAuthStore } from '@/lib/auth-store';
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
 
   const loginMutation = useMutation({
     mutationFn: authClient.login,
     onSuccess: (tokens) => {
-      setTokens(tokens.access_token, tokens.refresh_token);
+      setAuth(tokens, email);
       navigate({ to: '/' });
     },
   });

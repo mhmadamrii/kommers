@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import type { Product } from '@/lib/mock/products';
+import type { Product } from '@/lib/catalog-client';
 
 export interface CartLine {
   product: Product;

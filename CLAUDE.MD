@@ -67,11 +67,28 @@ Known limitation to revisit at Phase 10 (k8s): JWT signing key is generate-if-mi
 
 Next concrete step when resuming: start Phase 2 (Catalog Service) with `docs/catalog-service.md` — Problem → Requirements → Architecture → Tradeoffs → Failure Cases → Scaling Strategy, per Working Agreement.
 
-## Phase 2 — Catalog Service
+## Phase 2 — Catalog Service *(in progress)*
 
 Scope: categories, variants, images (MinIO), search stub, Redis cache w/ explicit invalidation strategy, pagination, indexing.
 
 Frontend: product listing + detail pages.
+
+Key decisions (full reasoning in `docs/catalog-service.md`): GORM again for consistency; integer cents for money; keyset pagination (no OFFSET on public routes); cache-aside w/ delete-on-write + 10min TTL backstop, listing queries deliberately uncached in v1; Redis fail-open (opposite of auth's fail-closed limiter — cache vs abuse-protection); `display_stock` is a denormalized display value until Inventory (Phase 4) owns real stock; JWKS-verified admin routes (first consumer of Phase 1's RS256 decision).
+
+Progress:
+
+- [x] `docs/catalog-service.md` written — pending review
+- [x] Infra: MinIO added to `infra/docker-compose.yml`; `kommers_catalog` DB + `pg_trgm` added to `infra/postgres/init.sql` (note: init.sql only runs on a fresh volume — create the DB manually on existing dev volumes)
+- [ ] Service skeleton (health/readyz, logging, metrics, Dockerfile, config)
+- [ ] Categories CRUD + public list
+- [ ] Products CRUD + public list (keyset pagination) + detail by slug
+- [ ] Variants CRUD
+- [ ] Image upload → MinIO
+- [ ] Search stub (`q=`, pg_trgm)
+- [ ] Redis cache-aside + invalidation
+- [ ] JWKS auth middleware for `/admin/*`
+- [ ] Unit tests (pagination cursor, cache invalidation, handlers)
+- [ ] Frontend: product listing + detail pages wired to real API
 
 ## Phase 3 — Cart Service
 

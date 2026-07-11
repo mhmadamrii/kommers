@@ -1,6 +1,7 @@
 go 1.26
 
 use (
+	./services/pkg
 	./services/auth
 	./services/catalog
 	./services/inventory

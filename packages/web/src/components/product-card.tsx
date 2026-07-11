@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { Star } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import type { Product } from '@/lib/mock/products';
+import type { Product } from '@/lib/catalog-client';
 import { formatCurrency } from '@/lib/utils';
 
 interface ProductCardProps {
@@ -21,8 +20,16 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <Card className='flex h-full flex-col'>
       <CardHeader>
-        <div className='mb-2 flex h-32 items-center justify-center rounded-base border-2 border-border bg-secondary-background text-sm text-foreground/50'>
-          Image
+        <div className='mb-2 flex h-32 items-center justify-center overflow-hidden rounded-base border-2 border-border bg-secondary-background text-sm text-foreground/50'>
+          {product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className='h-full w-full object-cover'
+            />
+          ) : (
+            'Image'
+          )}
         </div>
         <CardTitle className='text-base'>
           <Link
@@ -35,10 +42,6 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className='flex flex-1 flex-col gap-2'>
-        <div className='flex items-center gap-1 text-sm'>
-          <Star className='size-4 fill-current' />
-          {product.rating}
-        </div>
         <p className='text-sm text-foreground/70'>
           {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
         </p>

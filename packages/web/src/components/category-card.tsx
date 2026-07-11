@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Category } from '@/lib/mock/categories';
+import type { Category } from '@/lib/catalog-client';
 
 export function CategoryCard({ category }: { category: Category }) {
   return (

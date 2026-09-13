@@ -1,6 +1,5 @@
 {
   "extends": "../config/tsconfig/react-library.json",
-  "references": [{ "path": "../api-client" }],
   "compilerOptions": {
     "noEmit": true,
     "rootDir": "src",

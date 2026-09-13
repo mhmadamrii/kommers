@@ -59,7 +59,7 @@ Progress:
 - [x] Rate limiting on `/register` + `/login` (Redis, fail-closed per docs/auth-service.md)
 - [x] JWKS endpoint (`GET /.well-known/jwks.json`)
 - [x] Unit tests for token issuance/rotation logic
-- [x] `packages/web` login/register routes wired to real endpoints — `src/lib/auth-client.ts` (fetch client, `VITE_AUTH_API_URL`) + `src/lib/token-storage.ts` (localStorage) + TanStack Query mutations in the auth forms; required adding CORS middleware to the service (`internal/middleware/cors.go`, `CORS_ALLOWED_ORIGINS` env, unit-tested). Browser-verified end-to-end via headless Chromium: register→auto-login→tokens stored→redirect, fresh login, wrong-password error rendering, disallowed origins get no CORS headers
+- [x] `packages/web` login/register routes wired to real endpoints — `src/lib/auth-client.ts` (fetch client, `VITE_AUTH_API_URL`) + `src/lib/auth-store.ts` (zustand, persisted to localStorage: tokens + user decoded from JWT claims, bootstrap refresh-rotation on app load, logout w/ server-side revocation) + TanStack Query mutations in the auth forms; `<UserMenu>` in both headers (email, admin badge, logout); required adding CORS middleware to the service (`internal/middleware/cors.go`, `CORS_ALLOWED_ORIGINS` env, unit-tested). Browser-verified end-to-end via headless Chromium: register→auto-login→tokens stored→redirect, fresh login, wrong-password error rendering, disallowed origins get no CORS headers
 
 **Phase 1 Definition of Done met.** Phase 2 (Catalog Service) can start — begin with `docs/catalog-service.md` per Working Agreement.
 

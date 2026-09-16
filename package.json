@@ -4,5 +4,11 @@
   "private": true,
   "devDependencies": {
     "prettier": "^3.9.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild"
+    ]
   }
 }

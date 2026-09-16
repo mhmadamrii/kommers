@@ -1,0 +1,22 @@
+{
+  "name": "@kommers/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "start": "vinxi start"
+  },
+  "dependencies": {
+    "@solidjs/router": "^0.15.3",
+    "@solidjs/start": "^1.1.5",
+    "solid-js": "^1.9.5",
+    "vinxi": "^0.5.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.9",
+    "tailwindcss": "^4.0.9",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kommers
+      POSTGRES_PASSWORD: kommers
+      POSTGRES_DB: kommers
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kommers"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: kommers
+      MINIO_ROOT_PASSWORD: kommers123
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./packages/server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      ENV: development
+      DATABASE_URL: postgres://kommers:kommers@postgres:5432/kommers?sslmode=disable
+      JWT_SECRET: dev-secret-change-me
+      JWT_EXPIRY_HOURS: "24"
+      # Not consumed by the app yet — wired up once S3-compatible storage
+      # (product images, etc.) is added.
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY_ID: kommers
+      S3_SECRET_ACCESS_KEY: kommers123
+      S3_BUCKET: kommers
+      S3_USE_SSL: "false"
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  minio_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,9 @@
+# Local/dev: plain HTTP on :80.
+# On a VPS, swap ":80" for your real domain (e.g. "api.kommers.dev") and
+# Caddy will automatically provision + renew a Let's Encrypt cert — no
+# other change needed.
+:80 {
+	encode gzip
+
+	reverse_proxy server:8080
+}

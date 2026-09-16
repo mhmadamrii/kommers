@@ -1,18 +1,70 @@
 package router
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
 
 	"github.com/mhmadamrii/kommers/server/internal/handler"
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
+	"github.com/mhmadamrii/kommers/server/internal/model"
 )
 
-func New() *gin.Engine {
+func New(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.Logger())
 
 	r.GET("/healthz", handler.Healthz)
 	r.GET("/readyz", handler.Readyz)
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	authHandler := handler.NewAuthHandler(db, jwtSecret, jwtExpiry)
+	productHandler := handler.NewProductHandler(db)
+	sellerHandler := handler.NewSellerHandler(db)
+	categoryHandler := handler.NewCategoryHandler(db)
+
+	v1 := r.Group("/api/v1")
+	{
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/login", authHandler.Login)
+		}
+
+		products := v1.Group("/products")
+		{
+			products.GET("", productHandler.List)
+			products.GET("/:slug", productHandler.GetBySlug)
+
+			admin := products.Group("")
+			admin.Use(middleware.RequireAuth(jwtSecret), middleware.RequireRole(model.RoleAdmin, model.RoleSeller))
+			{
+				admin.POST("", productHandler.Create)
+				admin.PUT("/:id", productHandler.Update)
+				admin.DELETE("/:id", productHandler.Delete)
+			}
+		}
+
+		sellers := v1.Group("/sellers")
+		sellers.Use(middleware.RequireAuth(jwtSecret))
+		{
+			sellers.POST("/apply", sellerHandler.Apply)
+		}
+
+		categories := v1.Group("/categories")
+		{
+			categories.GET("", categoryHandler.List)
+
+			categoryAdmin := categories.Group("")
+			categoryAdmin.Use(middleware.RequireAuth(jwtSecret), middleware.RequireRole(model.RoleAdmin))
+			{
+				categoryAdmin.POST("", categoryHandler.Create)
+			}
+		}
+	}
 
 	return r
 }

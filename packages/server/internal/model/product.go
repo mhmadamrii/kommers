@@ -6,6 +6,8 @@ type Product struct {
 	gorm.Model
 	CategoryID  uint     `gorm:"not null;index"`
 	Category    Category `gorm:"foreignKey:CategoryID"`
+	OwnerID     uint     `gorm:"not null;index"`
+	Owner       User     `gorm:"foreignKey:OwnerID"`
 	Name        string   `gorm:"size:255;not null"`
 	Slug        string   `gorm:"size:255;uniqueIndex;not null"`
 	Description string   `gorm:"type:text"`

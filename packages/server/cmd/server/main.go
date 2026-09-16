@@ -4,11 +4,20 @@ import (
 	"log/slog"
 	"os"
 
+	_ "github.com/mhmadamrii/kommers/server/docs"
 	"github.com/mhmadamrii/kommers/server/internal/config"
 	"github.com/mhmadamrii/kommers/server/internal/database"
 	"github.com/mhmadamrii/kommers/server/internal/router"
 )
 
+// @title						Kommers API
+// @version					1.0
+// @description				E-commerce backend API for kommers.
+// @BasePath					/
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
+// @description				Type "Bearer" followed by a space and the JWT token.
 func main() {
 	cfg := config.Load()
 
@@ -22,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	r := router.New()
+	r := router.New(db, cfg.JWTSecret, cfg.JWTExpiry)
 
 	slog.Info("server starting", "port", cfg.Port, "env", cfg.Env)
 	if err := r.Run(":" + cfg.Port); err != nil {

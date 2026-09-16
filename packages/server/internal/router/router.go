@@ -13,7 +13,7 @@ import (
 	"github.com/mhmadamrii/kommers/server/internal/model"
 )
 
-func New(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration) *gin.Engine {
+func New(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration, events handler.OrderEventPublisher) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.Logger())
 
@@ -28,7 +28,7 @@ func New(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration) *gin.Engine {
 	cartHandler := handler.NewCartHandler(db)
 	profileHandler := handler.NewProfileHandler(db)
 	addressHandler := handler.NewAddressHandler(db)
-	orderHandler := handler.NewOrderHandler(db)
+	orderHandler := handler.NewOrderHandler(db, events)
 
 	v1 := r.Group("/api/v1")
 	{

@@ -34,6 +34,23 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: kommers
+      RABBITMQ_DEFAULT_PASS: kommers
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   server:
     build:
       context: ./packages/server
@@ -43,12 +60,15 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       PORT: "8080"
       ENV: development
       DATABASE_URL: postgres://kommers:kommers@postgres:5432/kommers?sslmode=disable
       JWT_SECRET: dev-secret-change-me
       JWT_EXPIRY_HOURS: "24"
+      RABBITMQ_URL: amqp://kommers:kommers@rabbitmq:5672/
       # Not consumed by the app yet — wired up once S3-compatible storage
       # (product images, etc.) is added.
       S3_ENDPOINT: http://minio:9000
@@ -58,6 +78,17 @@ services:
       S3_USE_SSL: "false"
     expose:
       - "8080"
+
+  notifier:
+    build:
+      context: ./packages/server
+    entrypoint: ["./notifier"]
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: amqp://kommers:kommers@rabbitmq:5672/
 
   caddy:
     image: caddy:2-alpine
@@ -75,5 +106,6 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  rabbitmq_data:
   caddy_data:
   caddy_config:

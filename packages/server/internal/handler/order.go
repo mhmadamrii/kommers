@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -9,16 +11,25 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/mhmadamrii/kommers/server/internal/event"
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
 )
 
-type OrderHandler struct {
-	DB *gorm.DB
+// OrderEventPublisher is satisfied by *broker.Publisher. Kept as an
+// interface so this package doesn't depend on the AMQP client, and so
+// OrderHandler works fine with it left nil (broker unavailable).
+type OrderEventPublisher interface {
+	PublishOrderCreated(ctx context.Context, evt event.OrderCreatedEvent) error
 }
 
-func NewOrderHandler(db *gorm.DB) *OrderHandler {
-	return &OrderHandler{DB: db}
+type OrderHandler struct {
+	DB     *gorm.DB
+	Events OrderEventPublisher
+}
+
+func NewOrderHandler(db *gorm.DB, events OrderEventPublisher) *OrderHandler {
+	return &OrderHandler{DB: db, Events: events}
 }
 
 type checkoutRequest struct {
@@ -169,6 +180,24 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	}
 
 	h.DB.Preload("Items").First(&order, order.ID)
+
+	// Best-effort: a down/unreachable broker must never fail checkout.
+	if h.Events != nil {
+		var user model.User
+		if err := h.DB.First(&user, userID).Error; err == nil {
+			evt := event.OrderCreatedEvent{
+				OrderID:    order.ID,
+				UserID:     order.UserID,
+				UserEmail:  user.Email,
+				TotalCents: order.TotalCents,
+				CreatedAt:  order.CreatedAt,
+			}
+			if err := h.Events.PublishOrderCreated(c.Request.Context(), evt); err != nil {
+				slog.Error("publish order.created failed", "order_id", order.ID, "error", err)
+			}
+		}
+	}
+
 	c.JSON(http.StatusCreated, newOrderResponse(order))
 }
 

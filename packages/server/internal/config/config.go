@@ -12,6 +12,7 @@ type Config struct {
 	DatabaseURL string
 	JWTSecret   string
 	JWTExpiry   time.Duration
+	RabbitMQURL string
 }
 
 func Load() Config {
@@ -26,6 +27,7 @@ func Load() Config {
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://amri@localhost:5432/kommers?sslmode=disable"),
 		JWTSecret:   getEnv("JWT_SECRET", "dev-secret-change-me"),
 		JWTExpiry:   time.Duration(expiryHours) * time.Hour,
+		RabbitMQURL: getEnv("RABBITMQ_URL", "amqp://kommers:kommers@localhost:5672/"),
 	}
 }
 

@@ -25,6 +25,10 @@ func New(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration) *gin.Engine {
 	productHandler := handler.NewProductHandler(db)
 	sellerHandler := handler.NewSellerHandler(db)
 	categoryHandler := handler.NewCategoryHandler(db)
+	cartHandler := handler.NewCartHandler(db)
+	profileHandler := handler.NewProfileHandler(db)
+	addressHandler := handler.NewAddressHandler(db)
+	orderHandler := handler.NewOrderHandler(db)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -63,6 +67,41 @@ func New(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration) *gin.Engine {
 			{
 				categoryAdmin.POST("", categoryHandler.Create)
 			}
+		}
+
+		cart := v1.Group("/cart")
+		cart.Use(middleware.RequireAuth(jwtSecret))
+		{
+			cart.GET("", cartHandler.Get)
+			cart.POST("/items", cartHandler.AddItem)
+			cart.PUT("/items/:id", cartHandler.UpdateItem)
+			cart.DELETE("/items/:id", cartHandler.RemoveItem)
+		}
+
+		me := v1.Group("/me")
+		me.Use(middleware.RequireAuth(jwtSecret))
+		{
+			me.GET("", profileHandler.GetMe)
+			me.PUT("", profileHandler.UpdateMe)
+
+			addresses := me.Group("/addresses")
+			{
+				addresses.GET("", addressHandler.List)
+				addresses.POST("", addressHandler.Create)
+				addresses.PUT("/:id", addressHandler.Update)
+				addresses.DELETE("/:id", addressHandler.Delete)
+			}
+		}
+
+		checkout := v1.Group("/checkout")
+		checkout.Use(middleware.RequireAuth(jwtSecret))
+		checkout.POST("", orderHandler.Checkout)
+
+		orders := v1.Group("/orders")
+		orders.Use(middleware.RequireAuth(jwtSecret))
+		{
+			orders.GET("", orderHandler.List)
+			orders.GET("/:id", orderHandler.GetByID)
 		}
 	}
 

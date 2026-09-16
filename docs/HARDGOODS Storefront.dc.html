@@ -1,0 +1,4617 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet data-dc-atomics
+        ><link rel="preconnect" href="https://fonts.googleapis.com" /><link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin
+        /><link
+          href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
+        <script src="./image-slot.js"></script>
+        <style>
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            margin: 0;
+            background: #f2efe6;
+            color: #0b0b0b;
+            font-family: Archivo, system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+          }
+          a {
+            color: #1f2bff;
+            text-decoration: none;
+          }
+          a:hover {
+            color: #0b0b0b;
+          }
+          ::selection {
+            background: #1f2bff;
+            color: #fff;
+          }
+          @keyframes hgmarq {
+            from {
+              transform: translateX(0);
+            }
+            to {
+              transform: translateX(-50%);
+            }
+          }
+          @keyframes hgtoast {
+            from {
+              transform: translateY(120%);
+            }
+            to {
+              transform: translateY(0);
+            }
+          }
+        </style></helmet
+      >
+
+      <div style="min-height: 100vh; display: flex; flex-direction: column">
+        <sc-if value="{{ chromeFull }}" hint-placeholder-val="{{ true }}">
+          <div
+            style="position: sticky; top: 0; z-index: 40; background: #f2efe6"
+          >
+            <div
+              style="
+                background: #0b0b0b;
+                color: #f2efe6;
+                font:
+                  500 10px/1 'JetBrains Mono',
+                  monospace;
+                letter-spacing: 0.18em;
+                padding: 10px 0;
+                overflow: hidden;
+                white-space: nowrap;
+              "
+            >
+              <div
+                style="
+                  display: inline-block;
+                  animation: hgmarq 34s linear infinite;
+                "
+              >
+                FREE SHIPPING OVER $150 &nbsp;✱&nbsp; SMALL RUNS, NO RESTOCKS
+                &nbsp;✱&nbsp; SHIPS FROM ROTTERDAM &nbsp;✱&nbsp; FREE SHIPPING
+                OVER $150 &nbsp;✱&nbsp; SMALL RUNS, NO RESTOCKS &nbsp;✱&nbsp;
+                SHIPS FROM ROTTERDAM &nbsp;✱&nbsp; FREE SHIPPING OVER $150
+                &nbsp;✱&nbsp; SMALL RUNS, NO RESTOCKS &nbsp;✱&nbsp; SHIPS FROM
+                ROTTERDAM &nbsp;✱&nbsp; FREE SHIPPING OVER $150 &nbsp;✱&nbsp;
+                SMALL RUNS, NO RESTOCKS &nbsp;✱&nbsp; SHIPS FROM ROTTERDAM
+                &nbsp;✱&nbsp;
+              </div>
+            </div>
+            <div
+              style="
+                border-bottom: 3px solid #0b0b0b;
+                display: flex;
+                align-items: stretch;
+                background: #f2efe6;
+              "
+            >
+              <button
+                onClick="{{ goHome }}"
+                style="
+                  border: 0;
+                  border-right: 3px solid #0b0b0b;
+                  background: #0b0b0b;
+                  color: #f2efe6;
+                  font:
+                    900 26px/1 Archivo,
+                    sans-serif;
+                  font-stretch: 112%;
+                  letter-spacing: -0.045em;
+                  padding: 20px 22px;
+                  cursor: pointer;
+                "
+              >
+                HARDGOODS
+              </button>
+              <nav
+                style="
+                  flex: 1;
+                  display: flex;
+                  align-items: center;
+                  gap: 2px;
+                  padding: 0 6px;
+                "
+              >
+                <button
+                  onClick="{{ goShop }}"
+                  style="
+                    border: 0;
+                    background: none;
+                    font:
+                      700 12px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.14em;
+                    padding: 14px 16px;
+                    cursor: pointer;
+                    color: #0b0b0b;
+                  "
+                  style-hover="background:#1F2BFF;color:#fff"
+                >
+                  SHOP
+                </button>
+                <button
+                  onClick="{{ goShop }}"
+                  style="
+                    border: 0;
+                    background: none;
+                    font:
+                      700 12px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.14em;
+                    padding: 14px 16px;
+                    cursor: pointer;
+                    color: #0b0b0b;
+                  "
+                  style-hover="background:#1F2BFF;color:#fff"
+                >
+                  COLLECTIONS
+                </button>
+                <button
+                  onClick="{{ goHome }}"
+                  style="
+                    border: 0;
+                    background: none;
+                    font:
+                      700 12px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.14em;
+                    padding: 14px 16px;
+                    cursor: pointer;
+                    color: #0b0b0b;
+                  "
+                  style-hover="background:#1F2BFF;color:#fff"
+                >
+                  ABOUT
+                </button>
+              </nav>
+              <button
+                onClick="{{ goSearch }}"
+                style="
+                  border: 0;
+                  border-left: 3px solid #0b0b0b;
+                  background: none;
+                  font:
+                    700 12px 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.14em;
+                  padding: 0 20px;
+                  cursor: pointer;
+                "
+                style-hover="background:#0B0B0B;color:#F2EFE6"
+              >
+                ⌕ SEARCH
+              </button>
+              <button
+                onClick="{{ goAccount }}"
+                style="
+                  border: 0;
+                  border-left: 3px solid #0b0b0b;
+                  background: none;
+                  font:
+                    700 12px 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.14em;
+                  padding: 0 20px;
+                  cursor: pointer;
+                "
+                style-hover="background:#0B0B0B;color:#F2EFE6"
+              >
+                ACCOUNT
+              </button>
+              <button
+                onClick="{{ openCart }}"
+                style="
+                  border: 0;
+                  border-left: 3px solid #0b0b0b;
+                  background: #1f2bff;
+                  color: #fff;
+                  font:
+                    700 12px 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.14em;
+                  padding: 0 22px;
+                  cursor: pointer;
+                "
+                style-hover="background:#0B0B0B"
+              >
+                CART [{{ cartCount }}]
+              </button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ chromeMinimal }}" hint-placeholder-val="{{ false }}">
+          <div
+            style="
+              border-bottom: 3px solid #0b0b0b;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              background: #f2efe6;
+              position: sticky;
+              top: 0;
+              z-index: 40;
+            "
+          >
+            <button
+              onClick="{{ goHome }}"
+              style="
+                border: 0;
+                background: #0b0b0b;
+                color: #f2efe6;
+                font:
+                  900 22px/1 Archivo,
+                  sans-serif;
+                font-stretch: 112%;
+                letter-spacing: -0.04em;
+                padding: 18px 20px;
+                cursor: pointer;
+              "
+            >
+              HARDGOODS
+            </button>
+            <span
+              style="
+                font:
+                  500 11px 'JetBrains Mono',
+                  monospace;
+                letter-spacing: 0.16em;
+                color: #6e6a5f;
+                padding: 0 22px;
+              "
+              >SECURE CONNECTION</span
+            >
+          </div>
+        </sc-if>
+
+        <main style="flex: 1">
+          <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div
+                  style="
+                    padding: 60px 44px 44px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    gap: 40px;
+                    border-right: 3px solid #0b0b0b;
+                  "
+                >
+                  <div>
+                    <div
+                      style="
+                        font:
+                          700 11px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.2em;
+                        color: #1f2bff;
+                        margin-bottom: 26px;
+                      "
+                    >
+                      AUTUMN INDEX — 16 OBJECTS
+                    </div>
+                    <h1
+                      style="
+                        margin: 0;
+                        font:
+                          900 clamp(48px, 7vw, 104px)/0.86 Archivo,
+                          sans-serif;
+                        font-stretch: 112%;
+                        letter-spacing: -0.05em;
+                        text-transform: uppercase;
+                        text-wrap: balance;
+                      "
+                    >
+                      Built to<br />be used,<br />not shown.
+                    </h1>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 26px">
+                    <p
+                      style="
+                        margin: 0;
+                        max-width: 38ch;
+                        font:
+                          400 17px/1.5 Archivo,
+                          sans-serif;
+                        color: #3b372e;
+                        text-wrap: pretty;
+                      "
+                    >
+                      Workwear and desk objects made in runs of forty. When a
+                      run sells out we do not remake it, and we will tell you
+                      before you get attached.
+                    </p>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap">
+                      <button
+                        onClick="{{ goShop }}"
+                        style="
+                          border: 3px solid #0b0b0b;
+                          background: #0b0b0b;
+                          color: #f2efe6;
+                          font:
+                            700 14px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.14em;
+                          padding: 22px 40px;
+                          cursor: pointer;
+                          box-shadow: 7px 7px 0 #1f2bff;
+                        "
+                        style-hover="box-shadow:0 0 0 #1F2BFF;transform:translate(7px,7px)"
+                        style-active="background:#1F2BFF;border-color:#1F2BFF"
+                      >
+                        SHOP ALL →
+                      </button>
+                      <button
+                        onClick="{{ goShop }}"
+                        style="
+                          border: 3px solid #0b0b0b;
+                          background: none;
+                          color: #0b0b0b;
+                          font:
+                            700 14px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.14em;
+                          padding: 22px 32px;
+                          cursor: pointer;
+                        "
+                        style-hover="background:#0B0B0B;color:#F2EFE6"
+                      >
+                        THE WORKROOM
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style="
+                    position: relative;
+                    min-height: 620px;
+                    background: #e2ded2;
+                  "
+                >
+                  <image-slot
+                    id="hg-hero"
+                    shape="rect"
+                    placeholder="HERO — full-bleed editorial shot, model in the canvas jacket"
+                  ></image-slot>
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: baseline;
+                  padding: 26px 44px;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <h2
+                  style="
+                    margin: 0;
+                    font:
+                      900 clamp(28px, 3.4vw, 44px)/1 Archivo,
+                      sans-serif;
+                    font-stretch: 112%;
+                    letter-spacing: -0.035em;
+                    text-transform: uppercase;
+                  "
+                >
+                  Featured
+                </h2>
+                <button
+                  onClick="{{ goShop }}"
+                  style="
+                    border: 0;
+                    background: none;
+                    font:
+                      700 11px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.16em;
+                    cursor: pointer;
+                    text-decoration: underline;
+                    text-underline-offset: 4px;
+                  "
+                >
+                  ALL 16 PRODUCTS →
+                </button>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+                  gap: 3px;
+                  background: #0b0b0b;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <sc-for list="{{ p4 }}" as="p" hint-placeholder-count="4">
+                  <div
+                    onClick="{{ goProduct }}"
+                    style="
+                      background: #f2efe6;
+                      cursor: pointer;
+                      position: relative;
+                      display: flex;
+                      flex-direction: column;
+                    "
+                    style-hover="background:#fff"
+                  >
+                    <div
+                      style="
+                        position: relative;
+                        aspect-ratio: 4/5;
+                        background: #e2ded2;
+                      "
+                    >
+                      <image-slot
+                        id="{{ p.slot }}"
+                        shape="rect"
+                        placeholder="{{ p.n }}"
+                      ></image-slot>
+                    </div>
+                    <div
+                      style="
+                        padding: 16px;
+                        border-top: 3px solid #0b0b0b;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 7px;
+                        flex: 1;
+                      "
+                    >
+                      <span
+                        style="
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          color: #1f2bff;
+                        "
+                        >{{ p.t }}</span
+                      >
+                      <span
+                        style="
+                          font:
+                            800 19px/1.1 Archivo,
+                            sans-serif;
+                          letter-spacing: -0.02em;
+                        "
+                        >{{ p.n }}</span
+                      >
+                      <span
+                        style="
+                          font:
+                            500 15px 'JetBrains Mono',
+                            monospace;
+                          margin-top: auto;
+                        "
+                        >{{ p.p }}</span
+                      >
+                      <span
+                        style="
+                          font:
+                            400 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.1em;
+                          color: #6e6a5f;
+                        "
+                        >{{ p.s }}</span
+                      >
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div
+                style="
+                  background: #0b0b0b;
+                  color: #f2efe6;
+                  font:
+                    900 clamp(22px, 2.6vw, 34px)/1 Archivo,
+                    sans-serif;
+                  font-stretch: 112%;
+                  letter-spacing: -0.02em;
+                  padding: 14px 0;
+                  overflow: hidden;
+                  white-space: nowrap;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div
+                  style="
+                    display: inline-block;
+                    animation: hgmarq 26s linear infinite;
+                  "
+                >
+                  NEW ARRIVALS ✱ NEW ARRIVALS ✱ NEW ARRIVALS ✱ NEW ARRIVALS ✱
+                  NEW ARRIVALS ✱ NEW ARRIVALS ✱ NEW ARRIVALS ✱ NEW ARRIVALS ✱
+                  NEW ARRIVALS ✱ NEW ARRIVALS ✱ NEW ARRIVALS ✱ NEW ARRIVALS ✱
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                  gap: 3px;
+                  background: #0b0b0b;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <sc-for list="{{ p3 }}" as="p" hint-placeholder-count="3">
+                  <div
+                    onClick="{{ goProduct }}"
+                    style="background: #f2efe6; cursor: pointer"
+                    style-hover="background:#fff"
+                  >
+                    <div
+                      style="
+                        position: relative;
+                        aspect-ratio: 1/1;
+                        background: #e2ded2;
+                      "
+                    >
+                      <image-slot
+                        id="{{ p.slot }}"
+                        shape="rect"
+                        placeholder="{{ p.n }}"
+                      ></image-slot
+                      ><span
+                        style="
+                          position: absolute;
+                          top: 0;
+                          left: 0;
+                          background: #1f2bff;
+                          color: #fff;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.14em;
+                          padding: 7px 11px;
+                          pointer-events: none;
+                        "
+                        >NEW</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        padding: 16px;
+                        border-top: 3px solid #0b0b0b;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        gap: 12px;
+                      "
+                    >
+                      <span
+                        style="
+                          font:
+                            800 19px/1.1 Archivo,
+                            sans-serif;
+                          letter-spacing: -0.02em;
+                        "
+                        >{{ p.n }}</span
+                      ><span
+                        style="
+                          font:
+                            500 15px 'JetBrains Mono',
+                            monospace;
+                        "
+                        >{{ p.p }}</span
+                      >
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div
+                  style="
+                    background: #1f2bff;
+                    color: #fff;
+                    padding: 54px 40px;
+                    border-right: 3px solid #0b0b0b;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    gap: 40px;
+                  "
+                >
+                  <div>
+                    <div
+                      style="
+                        font:
+                          700 11px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.2em;
+                        margin-bottom: 18px;
+                      "
+                    >
+                      COLLECTION 02
+                    </div>
+                    <div
+                      style="
+                        font:
+                          900 clamp(38px, 4.6vw, 62px)/0.9 Archivo,
+                          sans-serif;
+                        font-stretch: 112%;
+                        text-transform: uppercase;
+                        letter-spacing: -0.045em;
+                      "
+                    >
+                      Workroom<br />basics
+                    </div>
+                  </div>
+                  <button
+                    onClick="{{ goShop }}"
+                    style="
+                      align-self: flex-start;
+                      border: 3px solid #fff;
+                      background: none;
+                      color: #fff;
+                      font:
+                        700 13px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.14em;
+                      padding: 18px 30px;
+                      cursor: pointer;
+                    "
+                    style-hover="background:#fff;color:#1F2BFF"
+                  >
+                    SEE THE SEVEN →
+                  </button>
+                </div>
+                <div
+                  style="
+                    position: relative;
+                    min-height: 380px;
+                    background: #e2ded2;
+                  "
+                >
+                  <image-slot
+                    id="hg-promo"
+                    shape="rect"
+                    placeholder="PROMOTIONAL — workroom still life"
+                  ></image-slot>
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                  gap: 32px;
+                  align-items: center;
+                  padding: 44px;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div>
+                  <div
+                    style="
+                      font:
+                        900 clamp(26px, 3vw, 38px)/1 Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      text-transform: uppercase;
+                      letter-spacing: -0.03em;
+                    "
+                  >
+                    One mail a month
+                  </div>
+                  <p
+                    style="
+                      margin: 10px 0 0;
+                      font:
+                        400 15px/1.5 Archivo,
+                        sans-serif;
+                      color: #3b372e;
+                    "
+                  >
+                    New runs, restock warnings, nothing else.
+                  </p>
+                </div>
+                <div style="display: flex; gap: 0">
+                  <label style="flex: 1; display: block"
+                    ><span
+                      style="
+                        display: block;
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        margin-bottom: 7px;
+                      "
+                      >EMAIL ADDRESS</span
+                    ><input
+                      type="email"
+                      placeholder="you@email.com"
+                      style="
+                        width: 100%;
+                        border: 3px solid #0b0b0b;
+                        background: #f2efe6;
+                        padding: 19px 16px;
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                        outline: none;
+                      "
+                      style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                  /></label>
+                  <button
+                    style="
+                      align-self: flex-end;
+                      border: 3px solid #0b0b0b;
+                      border-left: 0;
+                      background: #0b0b0b;
+                      color: #f2efe6;
+                      font:
+                        700 13px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.14em;
+                      padding: 19px 30px;
+                      cursor: pointer;
+                    "
+                    style-hover="background:#1F2BFF;border-color:#1F2BFF"
+                  >
+                    SUBSCRIBE
+                  </button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isShop }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div
+                style="
+                  padding: 14px 44px;
+                  border-bottom: 3px solid #0b0b0b;
+                  font:
+                    400 11px 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.08em;
+                  color: #6e6a5f;
+                "
+              >
+                HOME / SHOP /
+                <span style="color: #0b0b0b; font-weight: 700">OUTERWEAR</span>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div style="padding: 44px; border-right: 3px solid #0b0b0b">
+                  <h1
+                    style="
+                      margin: 0;
+                      font:
+                        900 clamp(46px, 7vw, 96px)/0.85 Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      letter-spacing: -0.05em;
+                      text-transform: uppercase;
+                    "
+                  >
+                    Outer<br />wear
+                  </h1>
+                </div>
+                <div
+                  style="
+                    background: #1f2bff;
+                    color: #fff;
+                    padding: 44px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    gap: 28px;
+                  "
+                >
+                  <p
+                    style="
+                      margin: 0;
+                      max-width: 34ch;
+                      font:
+                        400 17px/1.5 Archivo,
+                        sans-serif;
+                    "
+                  >
+                    Heavy cloth, boxy cuts, runs of forty. Cut a size down if
+                    you want it close.
+                  </p>
+                  <div
+                    style="
+                      font:
+                        900 56px/1 Archivo,
+                        sans-serif;
+                      letter-spacing: -0.04em;
+                    "
+                  >
+                    09<span
+                      style="
+                        font:
+                          500 12px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                      "
+                    >
+                      PRODUCTS</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  align-items: stretch;
+                  border-bottom: 3px solid #0b0b0b;
+                  font:
+                    700 11px 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.14em;
+                "
+              >
+                <span
+                  style="
+                    padding: 17px 20px;
+                    border-right: 3px solid #0b0b0b;
+                    background: #0b0b0b;
+                    color: #f2efe6;
+                  "
+                  >FILTER</span
+                >
+                <span
+                  style="
+                    padding: 17px 20px;
+                    border-right: 3px solid #0b0b0b;
+                    cursor: pointer;
+                  "
+                  >SIZE ▾</span
+                >
+                <span
+                  style="
+                    padding: 17px 20px;
+                    border-right: 3px solid #0b0b0b;
+                    cursor: pointer;
+                  "
+                  >COLOR ▾</span
+                >
+                <span
+                  style="
+                    padding: 17px 20px;
+                    border-right: 3px solid #0b0b0b;
+                    cursor: pointer;
+                  "
+                  >PRICE ▾</span
+                >
+                <span
+                  style="
+                    padding: 17px 20px;
+                    border-right: 3px solid #0b0b0b;
+                    background: #1f2bff;
+                    color: #fff;
+                    cursor: pointer;
+                  "
+                  >IN STOCK ✕</span
+                >
+                <span style="flex: 1; min-width: 20px"></span>
+                <span
+                  style="
+                    padding: 17px 20px;
+                    border-left: 3px solid #0b0b0b;
+                    cursor: pointer;
+                  "
+                  >SORT: NEWEST ▾</span
+                >
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+                  gap: 3px;
+                  background: #0b0b0b;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <sc-for list="{{ p9 }}" as="p" hint-placeholder-count="9">
+                  <div
+                    onClick="{{ goProduct }}"
+                    style="
+                      background: #f2efe6;
+                      cursor: pointer;
+                      display: flex;
+                      flex-direction: column;
+                    "
+                    style-hover="background:#fff"
+                  >
+                    <div
+                      style="
+                        position: relative;
+                        aspect-ratio: 4/5;
+                        background: #e2ded2;
+                      "
+                    >
+                      <image-slot
+                        id="{{ p.slot }}"
+                        shape="rect"
+                        placeholder="{{ p.n }}"
+                      ></image-slot>
+                      <button
+                        onClick="{{ noop }}"
+                        style="
+                          position: absolute;
+                          top: 10px;
+                          right: 10px;
+                          width: 38px;
+                          height: 38px;
+                          border: 3px solid #0b0b0b;
+                          background: #f2efe6;
+                          font:
+                            14px 'JetBrains Mono',
+                            monospace;
+                          cursor: pointer;
+                          line-height: 1;
+                        "
+                        style-hover="background:#1F2BFF;color:#fff;border-color:#1F2BFF"
+                      >
+                        ♡
+                      </button>
+                      <sc-if
+                        value="{{ p.tag }}"
+                        hint-placeholder-val="{{ false }}"
+                        ><span
+                          style="
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            background: #0b0b0b;
+                            color: #f2efe6;
+                            font:
+                              700 10px 'JetBrains Mono',
+                              monospace;
+                            letter-spacing: 0.14em;
+                            padding: 7px 11px;
+                            pointer-events: none;
+                          "
+                          >{{ p.tag }}</span
+                        ></sc-if
+                      >
+                    </div>
+                    <div
+                      style="
+                        padding: 16px;
+                        border-top: 3px solid #0b0b0b;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 7px;
+                        flex: 1;
+                      "
+                    >
+                      <span
+                        style="
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          color: #1f2bff;
+                        "
+                        >{{ p.t }}</span
+                      >
+                      <span
+                        style="
+                          font:
+                            800 19px/1.1 Archivo,
+                            sans-serif;
+                          letter-spacing: -0.02em;
+                        "
+                        >{{ p.n }}</span
+                      >
+                      <span
+                        style="
+                          font:
+                            500 15px 'JetBrains Mono',
+                            monospace;
+                          margin-top: auto;
+                        "
+                        >{{ p.p }}</span
+                      >
+                      <span
+                        style="
+                          font:
+                            400 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.1em;
+                          color: #6e6a5f;
+                        "
+                        >{{ p.s }}</span
+                      >
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  flex-wrap: wrap;
+                  gap: 16px;
+                  padding: 32px 44px;
+                "
+              >
+                <span
+                  style="
+                    font:
+                      500 11px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.12em;
+                    color: #6e6a5f;
+                  "
+                  >SHOWING 9 OF 16</span
+                >
+                <button
+                  style="
+                    border: 3px solid #0b0b0b;
+                    background: none;
+                    font:
+                      700 13px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.14em;
+                    padding: 20px 46px;
+                    cursor: pointer;
+                    box-shadow: 6px 6px 0 #1f2bff;
+                  "
+                  style-hover="box-shadow:0 0 0;transform:translate(6px,6px)"
+                >
+                  LOAD MORE
+                </button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div
+                style="
+                  display: flex;
+                  align-items: stretch;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <span
+                  style="
+                    display: flex;
+                    align-items: center;
+                    padding: 0 24px;
+                    border-right: 3px solid #0b0b0b;
+                    font:
+                      700 11px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.18em;
+                    color: #6e6a5f;
+                  "
+                  >SEARCH</span
+                >
+                <input
+                  value="{{ query }}"
+                  onChange="{{ setQuery }}"
+                  placeholder="type here"
+                  style="
+                    flex: 1;
+                    min-width: 0;
+                    border: 0;
+                    background: none;
+                    padding: 26px 24px;
+                    font:
+                      900 clamp(30px, 5vw, 58px)/1 Archivo,
+                      sans-serif;
+                    font-stretch: 112%;
+                    letter-spacing: -0.04em;
+                    text-transform: uppercase;
+                    outline: none;
+                    color: #0b0b0b;
+                  "
+                  style-focus="background:#fff"
+                />
+                <button
+                  onClick="{{ clearQuery }}"
+                  style="
+                    border: 0;
+                    border-left: 3px solid #0b0b0b;
+                    background: none;
+                    padding: 0 24px;
+                    font:
+                      700 11px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.14em;
+                    cursor: pointer;
+                  "
+                  style-hover="background:#0B0B0B;color:#F2EFE6"
+                >
+                  CLEAR ✕
+                </button>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 16px;
+                  justify-content: space-between;
+                  align-items: center;
+                  padding: 16px 44px;
+                  border-bottom: 3px solid #0b0b0b;
+                  font:
+                    500 11px 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.12em;
+                "
+              >
+                <span>{{ resultLine }}</span>
+                <span style="display: flex; gap: 10px"
+                  ><span
+                    style="
+                      border: 3px solid #0b0b0b;
+                      padding: 10px 14px;
+                      font-weight: 700;
+                      cursor: pointer;
+                    "
+                    >FILTER</span
+                  ><span
+                    style="
+                      border: 3px solid #0b0b0b;
+                      padding: 10px 14px;
+                      font-weight: 700;
+                      cursor: pointer;
+                    "
+                    >SORT: RELEVANCE ▾</span
+                  ></span
+                >
+              </div>
+              <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(
+                      auto-fill,
+                      minmax(270px, 1fr)
+                    );
+                    gap: 3px;
+                    background: #0b0b0b;
+                    border-bottom: 3px solid #0b0b0b;
+                  "
+                >
+                  <sc-for
+                    list="{{ results }}"
+                    as="p"
+                    hint-placeholder-count="6"
+                  >
+                    <div
+                      onClick="{{ goProduct }}"
+                      style="background: #f2efe6; cursor: pointer"
+                      style-hover="background:#fff"
+                    >
+                      <div
+                        style="
+                          position: relative;
+                          aspect-ratio: 4/5;
+                          background: #e2ded2;
+                        "
+                      >
+                        <image-slot
+                          id="{{ p.slot }}"
+                          shape="rect"
+                          placeholder="{{ p.n }}"
+                        ></image-slot>
+                      </div>
+                      <div style="padding: 16px; border-top: 3px solid #0b0b0b">
+                        <div
+                          style="
+                            font:
+                              700 10px 'JetBrains Mono',
+                              monospace;
+                            letter-spacing: 0.16em;
+                            color: #1f2bff;
+                          "
+                        >
+                          {{ p.t }}
+                        </div>
+                        <div
+                          style="
+                            font:
+                              800 19px/1.1 Archivo,
+                              sans-serif;
+                            letter-spacing: -0.02em;
+                            margin: 7px 0;
+                          "
+                        >
+                          {{ p.n }}
+                        </div>
+                        <div
+                          style="
+                            font:
+                              500 15px 'JetBrains Mono',
+                              monospace;
+                          "
+                        >
+                          {{ p.p }}
+                        </div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 110px 44px; text-align: center">
+                  <div
+                    style="
+                      font:
+                        900 clamp(40px, 6vw, 78px)/0.9 Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      letter-spacing: -0.05em;
+                      text-transform: uppercase;
+                    "
+                  >
+                    Nothing<br />here.
+                  </div>
+                  <p
+                    style="
+                      margin: 22px auto 30px;
+                      max-width: 44ch;
+                      font:
+                        400 16px/1.5 Archivo,
+                        sans-serif;
+                      color: #3b372e;
+                    "
+                  >
+                    No product matches that. Check the spelling, or start from a
+                    category.
+                  </p>
+                  <div
+                    style="
+                      display: flex;
+                      flex-wrap: wrap;
+                      justify-content: center;
+                      gap: 10px;
+                      font:
+                        700 11px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.14em;
+                    "
+                  >
+                    <button
+                      onClick="{{ goShop }}"
+                      style="
+                        border: 3px solid #0b0b0b;
+                        background: none;
+                        padding: 16px 20px;
+                        cursor: pointer;
+                        font: inherit;
+                      "
+                      style-hover="background:#0B0B0B;color:#F2EFE6"
+                    >
+                      OUTERWEAR
+                    </button>
+                    <button
+                      onClick="{{ goShop }}"
+                      style="
+                        border: 3px solid #0b0b0b;
+                        background: none;
+                        padding: 16px 20px;
+                        cursor: pointer;
+                        font: inherit;
+                      "
+                      style-hover="background:#0B0B0B;color:#F2EFE6"
+                    >
+                      OBJECTS
+                    </button>
+                    <button
+                      onClick="{{ goShop }}"
+                      style="
+                        border: 3px solid #0b0b0b;
+                        background: none;
+                        padding: 16px 20px;
+                        cursor: pointer;
+                        font: inherit;
+                      "
+                      style-hover="background:#0B0B0B;color:#F2EFE6"
+                    >
+                      HOME
+                    </button>
+                    <button
+                      onClick="{{ goShop }}"
+                      style="
+                        border: 3px solid #1f2bff;
+                        background: #1f2bff;
+                        color: #fff;
+                        padding: 16px 20px;
+                        cursor: pointer;
+                        font: inherit;
+                      "
+                      style-hover="background:#0B0B0B;border-color:#0B0B0B"
+                    >
+                      SHOP ALL 16
+                    </button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isProduct }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div
+                style="
+                  padding: 14px 44px;
+                  border-bottom: 3px solid #0b0b0b;
+                  font:
+                    400 11px 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.08em;
+                  color: #6e6a5f;
+                "
+              >
+                HOME / SHOP / OUTERWEAR /
+                <span style="color: #0b0b0b; font-weight: 700"
+                  >CANVAS WORK JACKET</span
+                >
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div
+                  style="
+                    padding: 44px 40px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    gap: 36px;
+                    border-right: 3px solid #0b0b0b;
+                  "
+                >
+                  <div>
+                    <div
+                      style="
+                        font:
+                          700 11px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.2em;
+                        color: #1f2bff;
+                        margin-bottom: 20px;
+                      "
+                    >
+                      OUTERWEAR / SKU 0412
+                    </div>
+                    <h1
+                      style="
+                        margin: 0;
+                        font:
+                          900 clamp(40px, 5.6vw, 78px)/0.85 Archivo,
+                          sans-serif;
+                        font-stretch: 112%;
+                        letter-spacing: -0.05em;
+                        text-transform: uppercase;
+                      "
+                    >
+                      Canvas<br />work<br />jacket
+                    </h1>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      align-items: baseline;
+                      gap: 14px;
+                      flex-wrap: wrap;
+                    "
+                  >
+                    <span
+                      style="
+                        font:
+                          700 40px 'JetBrains Mono',
+                          monospace;
+                      "
+                      >$240</span
+                    ><span
+                      style="
+                        font:
+                          400 18px 'JetBrains Mono',
+                          monospace;
+                        color: #8b8578;
+                        text-decoration: line-through;
+                      "
+                      >$300</span
+                    ><span
+                      style="
+                        background: #1f2bff;
+                        color: #fff;
+                        font:
+                          700 11px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.14em;
+                        padding: 6px 10px;
+                      "
+                      >20% OFF</span
+                    >
+                  </div>
+                </div>
+                <div
+                  style="
+                    position: relative;
+                    min-height: 640px;
+                    background: #e2ded2;
+                  "
+                >
+                  <image-slot
+                    id="hg-pdp-main"
+                    shape="rect"
+                    placeholder="MAIN PRODUCT IMAGE — jacket, front, on figure"
+                  ></image-slot>
+                </div>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                  gap: 3px;
+                  background: #0b0b0b;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div
+                  style="
+                    position: relative;
+                    aspect-ratio: 1/1;
+                    background: #e2ded2;
+                  "
+                >
+                  <image-slot
+                    id="hg-pdp-2"
+                    shape="rect"
+                    placeholder="Back"
+                  ></image-slot>
+                </div>
+                <div
+                  style="
+                    position: relative;
+                    aspect-ratio: 1/1;
+                    background: #e2ded2;
+                  "
+                >
+                  <image-slot
+                    id="hg-pdp-3"
+                    shape="rect"
+                    placeholder="Fabric detail"
+                  ></image-slot>
+                </div>
+                <div
+                  style="
+                    position: relative;
+                    aspect-ratio: 1/1;
+                    background: #e2ded2;
+                  "
+                >
+                  <image-slot
+                    id="hg-pdp-4"
+                    shape="rect"
+                    placeholder="Pocket"
+                  ></image-slot>
+                </div>
+                <div
+                  style="
+                    position: relative;
+                    aspect-ratio: 1/1;
+                    background: #e2ded2;
+                  "
+                >
+                  <image-slot
+                    id="hg-pdp-5"
+                    shape="rect"
+                    placeholder="Flat lay"
+                  ></image-slot>
+                </div>
+                <div
+                  style="
+                    position: relative;
+                    aspect-ratio: 1/1;
+                    background: #e2ded2;
+                  "
+                >
+                  <image-slot
+                    id="hg-pdp-6"
+                    shape="rect"
+                    placeholder="Worn"
+                  ></image-slot>
+                </div>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div style="padding: 40px; border-right: 3px solid #0b0b0b">
+                  <p
+                    style="
+                      margin: 0 0 32px;
+                      font:
+                        400 19px/1.5 Archivo,
+                        sans-serif;
+                      text-wrap: pretty;
+                    "
+                  >
+                    12oz dry canvas, unlined, four pockets. It arrives stiff,
+                    softens across a season, and keeps its shape when it does.
+                  </p>
+                  <div style="border-top: 3px solid #0b0b0b">
+                    <button
+                      onClick="{{ toggleSpecs }}"
+                      style="
+                        width: 100%;
+                        border: 0;
+                        background: none;
+                        padding: 20px 0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        font:
+                          700 13px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.14em;
+                        cursor: pointer;
+                        border-bottom: 3px solid #0b0b0b;
+                      "
+                    >
+                      DETAILS &amp; SPECIFICATIONS<span style="font-size: 18px"
+                        >{{ specsIcon }}</span
+                      >
+                    </button>
+                    <sc-if
+                      value="{{ specsOpen }}"
+                      hint-placeholder-val="{{ true }}"
+                    >
+                      <table
+                        style="
+                          width: 100%;
+                          border-collapse: collapse;
+                          font:
+                            400 12px 'JetBrains Mono',
+                            monospace;
+                        "
+                      >
+                        <tbody>
+                          <tr>
+                            <td
+                              style="
+                                padding: 13px 0;
+                                color: #6e6a5f;
+                                border-bottom: 1px solid #cfcaba;
+                              "
+                            >
+                              MATERIAL
+                            </td>
+                            <td
+                              style="
+                                padding: 13px 0;
+                                text-align: right;
+                                border-bottom: 1px solid #cfcaba;
+                              "
+                            >
+                              100% COTTON CANVAS, 12 OZ
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              style="
+                                padding: 13px 0;
+                                color: #6e6a5f;
+                                border-bottom: 1px solid #cfcaba;
+                              "
+                            >
+                              FIT
+                            </td>
+                            <td
+                              style="
+                                padding: 13px 0;
+                                text-align: right;
+                                border-bottom: 1px solid #cfcaba;
+                              "
+                            >
+                              BOXY — TRUE TO SIZE
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              style="
+                                padding: 13px 0;
+                                color: #6e6a5f;
+                                border-bottom: 1px solid #cfcaba;
+                              "
+                            >
+                              ORIGIN
+                            </td>
+                            <td
+                              style="
+                                padding: 13px 0;
+                                text-align: right;
+                                border-bottom: 1px solid #cfcaba;
+                              "
+                            >
+                              PORTO, PORTUGAL
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              style="
+                                padding: 13px 0;
+                                color: #6e6a5f;
+                                border-bottom: 3px solid #0b0b0b;
+                              "
+                            >
+                              CARE
+                            </td>
+                            <td
+                              style="
+                                padding: 13px 0;
+                                text-align: right;
+                                border-bottom: 3px solid #0b0b0b;
+                              "
+                            >
+                              COLD WASH, HANG DRY
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </sc-if>
+                    <button
+                      onClick="{{ toggleShip }}"
+                      style="
+                        width: 100%;
+                        border: 0;
+                        background: none;
+                        padding: 20px 0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        font:
+                          700 13px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.14em;
+                        cursor: pointer;
+                        border-bottom: 3px solid #0b0b0b;
+                      "
+                    >
+                      SHIPPING &amp; RETURNS<span style="font-size: 18px"
+                        >{{ shipIcon }}</span
+                      >
+                    </button>
+                    <sc-if
+                      value="{{ shipOpen }}"
+                      hint-placeholder-val="{{ false }}"
+                    >
+                      <p
+                        style="
+                          margin: 0;
+                          padding: 18px 0;
+                          font:
+                            400 12px/1.9 'JetBrains Mono',
+                            monospace;
+                          color: #3b372e;
+                          border-bottom: 3px solid #0b0b0b;
+                        "
+                      >
+                        SHIPS IN 2–4 DAYS FROM ROTTERDAM. FREE OVER $150.<br />30-DAY
+                        RETURNS, UNWORN, TAGS ON. RETURN LABEL INCLUDED.
+                      </p>
+                    </sc-if>
+                  </div>
+                </div>
+                <div
+                  style="
+                    background: #0b0b0b;
+                    color: #f2efe6;
+                    padding: 40px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 26px;
+                  "
+                >
+                  <div>
+                    <div
+                      style="
+                        font:
+                          700 11px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        margin-bottom: 12px;
+                      "
+                    >
+                      COLOR — {{ colorLabel }}
+                    </div>
+                    <div style="display: flex; gap: 10px">
+                      <button
+                        onClick="{{ pickSand }}"
+                        style="width:46px;height:46px;background:#C8BFA8;border:3px solid #F2EFE6;cursor:pointer;outline:{{ sandRing }}"
+                        style-hover="outline:3px solid #1F2BFF;outline-offset:3px"
+                      ></button>
+                      <button
+                        onClick="{{ pickCoal }}"
+                        style="width:46px;height:46px;background:#2B2B2B;border:3px solid #F2EFE6;cursor:pointer;outline:{{ coalRing }}"
+                        style-hover="outline:3px solid #1F2BFF;outline-offset:3px"
+                      ></button>
+                      <button
+                        onClick="{{ pickBlue }}"
+                        style="width:46px;height:46px;background:#1F2BFF;border:3px solid #F2EFE6;cursor:pointer;outline:{{ blueRing }}"
+                        style-hover="outline:3px solid #1F2BFF;outline-offset:3px"
+                      ></button>
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        font:
+                          700 11px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        margin-bottom: 12px;
+                      "
+                    >
+                      <span>SIZE — {{ size }}</span
+                      ><span
+                        style="
+                          text-decoration: underline;
+                          cursor: pointer;
+                          color: #8fa0ff;
+                        "
+                        >SIZE GUIDE</span
+                      >
+                    </div>
+                    <div
+                      style="
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 8px;
+                      "
+                    >
+                      <button
+                        onClick="{{ pickS }}"
+                        style="border:3px solid #F2EFE6;background:{{ bgS }};color:{{ fgS }};padding:16px 0;font:700 14px 'JetBrains Mono',monospace;cursor:pointer"
+                        style-hover="border-color:#1F2BFF"
+                      >
+                        S
+                      </button>
+                      <button
+                        onClick="{{ pickM }}"
+                        style="border:3px solid #F2EFE6;background:{{ bgM }};color:{{ fgM }};padding:16px 0;font:700 14px 'JetBrains Mono',monospace;cursor:pointer"
+                        style-hover="border-color:#1F2BFF"
+                      >
+                        M
+                      </button>
+                      <button
+                        onClick="{{ pickL }}"
+                        style="border:3px solid #F2EFE6;background:{{ bgL }};color:{{ fgL }};padding:16px 0;font:700 14px 'JetBrains Mono',monospace;cursor:pointer"
+                        style-hover="border-color:#1F2BFF"
+                      >
+                        L
+                      </button>
+                      <button
+                        disabled="{{ true }}"
+                        style="
+                          border: 3px solid #55524a;
+                          background: none;
+                          color: #55524a;
+                          padding: 16px 0;
+                          font:
+                            700 14px 'JetBrains Mono',
+                            monospace;
+                          text-decoration: line-through;
+                          cursor: not-allowed;
+                        "
+                      >
+                        XL
+                      </button>
+                    </div>
+                    <div
+                      style="
+                        font:
+                          500 11px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.12em;
+                        color: #8fa0ff;
+                        margin-top: 12px;
+                      "
+                    >
+                      ● IN STOCK — 4 LEFT IN {{ size }}
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      gap: 10px;
+                      flex-wrap: wrap;
+                      margin-top: auto;
+                    "
+                  >
+                    <div style="display: flex; border: 3px solid #f2efe6">
+                      <button
+                        onClick="{{ dec }}"
+                        style="
+                          border: 0;
+                          background: none;
+                          color: #f2efe6;
+                          padding: 0 18px;
+                          font:
+                            700 18px 'JetBrains Mono',
+                            monospace;
+                          cursor: pointer;
+                        "
+                        style-hover="background:#F2EFE6;color:#0B0B0B"
+                      >
+                        −
+                      </button>
+                      <span
+                        style="
+                          padding: 20px 18px;
+                          border-left: 3px solid #f2efe6;
+                          border-right: 3px solid #f2efe6;
+                          font:
+                            700 16px 'JetBrains Mono',
+                            monospace;
+                          min-width: 60px;
+                          text-align: center;
+                        "
+                        >{{ qty }}</span
+                      >
+                      <button
+                        onClick="{{ inc }}"
+                        style="
+                          border: 0;
+                          background: none;
+                          color: #f2efe6;
+                          padding: 0 18px;
+                          font:
+                            700 18px 'JetBrains Mono',
+                            monospace;
+                          cursor: pointer;
+                        "
+                        style-hover="background:#F2EFE6;color:#0B0B0B"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      onClick="{{ addToCart }}"
+                      style="
+                        flex: 1;
+                        min-width: 220px;
+                        border: 3px solid #1f2bff;
+                        background: #1f2bff;
+                        color: #fff;
+                        padding: 22px;
+                        font:
+                          700 16px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        cursor: pointer;
+                        box-shadow: 7px 7px 0 #f2efe6;
+                      "
+                      style-hover="box-shadow:0 0 0;transform:translate(7px,7px)"
+                      style-active="background:#F2EFE6;color:#0B0B0B"
+                    >
+                      ADD TO CART
+                    </button>
+                    <button
+                      onClick="{{ noop }}"
+                      style="
+                        border: 3px solid #f2efe6;
+                        background: none;
+                        color: #f2efe6;
+                        padding: 0 20px;
+                        font:
+                          16px 'JetBrains Mono',
+                          monospace;
+                        cursor: pointer;
+                      "
+                      style-hover="background:#F2EFE6;color:#0B0B0B"
+                    >
+                      ♡
+                    </button>
+                  </div>
+                  <div
+                    style="
+                      font:
+                        400 11px/1.8 'JetBrains Mono',
+                        monospace;
+                      color: #9a958a;
+                      border-top: 1px solid #34322c;
+                      padding-top: 18px;
+                    "
+                  >
+                    FREE SHIPPING OVER $150 · 30-DAY RETURNS · SHIPS 2–4 DAYS
+                  </div>
+                </div>
+              </div>
+              <div
+                style="
+                  padding: 26px 44px;
+                  border-bottom: 3px solid #0b0b0b;
+                  font:
+                    900 clamp(24px, 3vw, 38px)/1 Archivo,
+                    sans-serif;
+                  font-stretch: 112%;
+                  text-transform: uppercase;
+                  letter-spacing: -0.03em;
+                "
+              >
+                Goes with
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+                  gap: 3px;
+                  background: #0b0b0b;
+                "
+              >
+                <sc-for list="{{ p4 }}" as="p" hint-placeholder-count="4">
+                  <div
+                    onClick="{{ goProduct }}"
+                    style="background: #f2efe6; cursor: pointer"
+                    style-hover="background:#fff"
+                  >
+                    <div
+                      style="
+                        position: relative;
+                        aspect-ratio: 4/5;
+                        background: #e2ded2;
+                      "
+                    >
+                      <image-slot
+                        id="{{ p.slot }}"
+                        shape="rect"
+                        placeholder="{{ p.n }}"
+                      ></image-slot>
+                    </div>
+                    <div
+                      style="
+                        padding: 16px;
+                        border-top: 3px solid #0b0b0b;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        gap: 12px;
+                      "
+                    >
+                      <span
+                        style="
+                          font:
+                            800 17px/1.1 Archivo,
+                            sans-serif;
+                        "
+                        >{{ p.n }}</span
+                      ><span
+                        style="
+                          font:
+                            500 14px 'JetBrains Mono',
+                            monospace;
+                        "
+                        >{{ p.p }}</span
+                      >
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isCart }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 16px;
+                  justify-content: space-between;
+                  align-items: baseline;
+                  padding: 40px 44px;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <h1
+                  style="
+                    margin: 0;
+                    font:
+                      900 clamp(40px, 6vw, 80px)/0.9 Archivo,
+                      sans-serif;
+                    font-stretch: 112%;
+                    letter-spacing: -0.05em;
+                    text-transform: uppercase;
+                  "
+                >
+                  Your cart
+                </h1>
+                <span
+                  style="
+                    font:
+                      500 12px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.16em;
+                    color: #6e6a5f;
+                  "
+                  >{{ cartCount }} ITEMS</span
+                >
+              </div>
+              <sc-if value="{{ cartFull }}" hint-placeholder-val="{{ true }}">
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                  "
+                >
+                  <div style="border-right: 3px solid #0b0b0b">
+                    <sc-for list="{{ cart }}" as="c" hint-placeholder-count="2">
+                      <div
+                        style="
+                          display: flex;
+                          gap: 20px;
+                          align-items: flex-start;
+                          padding: 24px 32px;
+                          border-bottom: 3px solid #0b0b0b;
+                          flex-wrap: wrap;
+                        "
+                      >
+                        <div
+                          style="
+                            position: relative;
+                            width: 120px;
+                            height: 150px;
+                            background: #e2ded2;
+                            border: 3px solid #0b0b0b;
+                            flex: none;
+                          "
+                        >
+                          <image-slot
+                            id="{{ c.slot }}"
+                            shape="rect"
+                            placeholder="IMG"
+                          ></image-slot>
+                        </div>
+                        <div style="flex: 1; min-width: 180px">
+                          <div
+                            style="
+                              font:
+                                800 22px/1.05 Archivo,
+                                sans-serif;
+                              letter-spacing: -0.025em;
+                            "
+                          >
+                            {{ c.n }}
+                          </div>
+                          <div
+                            style="
+                              font:
+                                400 11px/1.9 'JetBrains Mono',
+                                monospace;
+                              color: #6e6a5f;
+                              letter-spacing: 0.1em;
+                              margin-top: 8px;
+                            "
+                          >
+                            {{ c.v }}<br />{{ c.p }} EACH
+                          </div>
+                          <div
+                            style="
+                              display: flex;
+                              gap: 14px;
+                              align-items: center;
+                              margin-top: 16px;
+                              flex-wrap: wrap;
+                            "
+                          >
+                            <span
+                              style="
+                                display: inline-flex;
+                                border: 3px solid #0b0b0b;
+                              "
+                              ><span
+                                style="
+                                  padding: 10px 14px;
+                                  font:
+                                    700 14px 'JetBrains Mono',
+                                    monospace;
+                                  cursor: pointer;
+                                "
+                                >−</span
+                              ><span
+                                style="
+                                  padding: 10px 16px;
+                                  border-left: 3px solid #0b0b0b;
+                                  border-right: 3px solid #0b0b0b;
+                                  font:
+                                    700 14px 'JetBrains Mono',
+                                    monospace;
+                                "
+                                >{{ c.q }}</span
+                              ><span
+                                style="
+                                  padding: 10px 14px;
+                                  font:
+                                    700 14px 'JetBrains Mono',
+                                    monospace;
+                                  cursor: pointer;
+                                "
+                                >+</span
+                              ></span
+                            >
+                            <button
+                              onClick="{{ noop }}"
+                              style="
+                                border: 0;
+                                background: none;
+                                font:
+                                  700 11px 'JetBrains Mono',
+                                  monospace;
+                                letter-spacing: 0.14em;
+                                text-decoration: underline;
+                                text-underline-offset: 4px;
+                                cursor: pointer;
+                                padding: 0;
+                              "
+                            >
+                              REMOVE
+                            </button>
+                          </div>
+                        </div>
+                        <div
+                          style="
+                            font:
+                              700 22px 'JetBrains Mono',
+                              monospace;
+                          "
+                        >
+                          {{ c.tot }}
+                        </div>
+                      </div>
+                    </sc-for>
+                    <div
+                      style="
+                        padding: 24px 32px;
+                        display: flex;
+                        gap: 0;
+                        flex-wrap: wrap;
+                      "
+                    >
+                      <label style="flex: 1; min-width: 180px"
+                        ><span
+                          style="
+                            display: block;
+                            font:
+                              700 10px 'JetBrains Mono',
+                              monospace;
+                            letter-spacing: 0.16em;
+                            margin-bottom: 7px;
+                          "
+                          >PROMO CODE</span
+                        ><input
+                          placeholder="WORK10"
+                          style="
+                            width: 100%;
+                            border: 3px solid #0b0b0b;
+                            background: #f2efe6;
+                            padding: 17px 14px;
+                            font:
+                              400 13px 'JetBrains Mono',
+                              monospace;
+                            outline: none;
+                          "
+                          style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                      /></label>
+                      <button
+                        style="
+                          align-self: flex-end;
+                          border: 3px solid #0b0b0b;
+                          border-left: 0;
+                          background: none;
+                          font:
+                            700 12px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.14em;
+                          padding: 17px 26px;
+                          cursor: pointer;
+                        "
+                        style-hover="background:#0B0B0B;color:#F2EFE6"
+                      >
+                        APPLY
+                      </button>
+                    </div>
+                    <div style="padding: 0 32px 32px">
+                      <button
+                        onClick="{{ goShop }}"
+                        style="
+                          border: 0;
+                          background: none;
+                          font:
+                            700 12px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.14em;
+                          text-decoration: underline;
+                          text-underline-offset: 4px;
+                          cursor: pointer;
+                          padding: 0;
+                        "
+                      >
+                        ← CONTINUE SHOPPING
+                      </button>
+                    </div>
+                  </div>
+                  <div style="padding: 32px">
+                    <div
+                      style="
+                        font:
+                          700 12px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        padding-bottom: 16px;
+                        border-bottom: 3px solid #0b0b0b;
+                      "
+                    >
+                      ORDER SUMMARY
+                    </div>
+                    <div
+                      style="
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                        padding: 20px 0;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 14px;
+                      "
+                    >
+                      <span
+                        style="display: flex; justify-content: space-between"
+                        >SUBTOTAL<b>$372.00</b></span
+                      ><span
+                        style="
+                          display: flex;
+                          justify-content: space-between;
+                          color: #1f2bff;
+                        "
+                        >DISCOUNT · WORK10<b>−$37.20</b></span
+                      ><span
+                        style="display: flex; justify-content: space-between"
+                        >SHIPPING<b>$12.00</b></span
+                      >
+                    </div>
+                    <div
+                      style="
+                        border-top: 3px solid #0b0b0b;
+                        padding-top: 18px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                      "
+                    >
+                      <span
+                        style="
+                          font:
+                            900 26px Archivo,
+                            sans-serif;
+                          font-stretch: 112%;
+                          text-transform: uppercase;
+                          letter-spacing: -0.03em;
+                        "
+                        >Total</span
+                      ><span
+                        style="
+                          font:
+                            700 34px 'JetBrains Mono',
+                            monospace;
+                        "
+                        >$346.80</span
+                      >
+                    </div>
+                    <button
+                      onClick="{{ goCheckout }}"
+                      style="
+                        width: 100%;
+                        margin-top: 24px;
+                        border: 3px solid #1f2bff;
+                        background: #1f2bff;
+                        color: #fff;
+                        padding: 28px;
+                        font:
+                          700 17px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        cursor: pointer;
+                        box-shadow: 8px 8px 0 #0b0b0b;
+                      "
+                      style-hover="box-shadow:0 0 0;transform:translate(8px,8px)"
+                    >
+                      CHECKOUT →
+                    </button>
+                    <p
+                      style="
+                        margin: 18px 0 0;
+                        font:
+                          400 11px/1.8 'JetBrains Mono',
+                          monospace;
+                        color: #6e6a5f;
+                      "
+                    >
+                      TAXES CALCULATED AT CHECKOUT.<br />FREE SHIPPING OVER
+                      $150.
+                    </p>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 120px 44px; text-align: center">
+                  <div
+                    style="
+                      font:
+                        900 clamp(40px, 6vw, 74px)/0.9 Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      letter-spacing: -0.05em;
+                      text-transform: uppercase;
+                    "
+                  >
+                    Nothing<br />in the cart
+                  </div>
+                  <p
+                    style="
+                      margin: 22px 0 30px;
+                      font:
+                        400 16px 'JetBrains Mono',
+                        monospace;
+                      color: #6e6a5f;
+                    "
+                  >
+                    YOU HAVEN'T PICKED ANYTHING YET.
+                  </p>
+                  <button
+                    onClick="{{ goShop }}"
+                    style="
+                      border: 3px solid #0b0b0b;
+                      background: #0b0b0b;
+                      color: #f2efe6;
+                      padding: 22px 44px;
+                      font:
+                        700 14px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.16em;
+                      cursor: pointer;
+                      box-shadow: 7px 7px 0 #1f2bff;
+                    "
+                    style-hover="box-shadow:0 0 0;transform:translate(7px,7px)"
+                  >
+                    START SHOPPING
+                  </button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isCheckout }}" hint-placeholder-val="{{ false }}">
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+              "
+            >
+              <div
+                style="
+                  border-right: 3px solid #0b0b0b;
+                  padding: 40px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 38px;
+                "
+              >
+                <div>
+                  <h1
+                    style="
+                      margin: 0 0 8px;
+                      font:
+                        900 clamp(34px, 4.4vw, 56px)/0.9 Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      letter-spacing: -0.045em;
+                      text-transform: uppercase;
+                    "
+                  >
+                    Checkout
+                  </h1>
+                  <p
+                    style="
+                      margin: 0;
+                      font:
+                        400 12px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.1em;
+                      color: #6e6a5f;
+                    "
+                  >
+                    GUEST CHECKOUT — NO ACCOUNT NEEDED.
+                    <button
+                      onClick="{{ goAuth }}"
+                      style="
+                        border: 0;
+                        background: none;
+                        padding: 0;
+                        font: inherit;
+                        color: #1f2bff;
+                        text-decoration: underline;
+                        cursor: pointer;
+                      "
+                    >
+                      LOG IN INSTEAD
+                    </button>
+                  </p>
+                </div>
+                <div>
+                  <div
+                    style="
+                      font:
+                        900 22px Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      text-transform: uppercase;
+                      letter-spacing: -0.02em;
+                      border-bottom: 3px solid #0b0b0b;
+                      padding-bottom: 10px;
+                      margin-bottom: 18px;
+                    "
+                  >
+                    01 — Contact
+                  </div>
+                  <label style="display: block"
+                    ><span
+                      style="
+                        display: block;
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        margin-bottom: 7px;
+                      "
+                      >EMAIL</span
+                    ><input
+                      type="email"
+                      value="sam@studio.nl"
+                      style="
+                        width: 100%;
+                        border: 3px solid #0b0b0b;
+                        background: #f2efe6;
+                        padding: 17px 14px;
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                        outline: none;
+                      "
+                      style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                  /></label>
+                </div>
+                <div>
+                  <div
+                    style="
+                      font:
+                        900 22px Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      text-transform: uppercase;
+                      letter-spacing: -0.02em;
+                      border-bottom: 3px solid #0b0b0b;
+                      padding-bottom: 10px;
+                      margin-bottom: 18px;
+                    "
+                  >
+                    02 — Shipping address
+                  </div>
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: repeat(
+                        auto-fit,
+                        minmax(180px, 1fr)
+                      );
+                      gap: 16px;
+                    "
+                  >
+                    <label style="display: block"
+                      ><span
+                        style="
+                          display: block;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          margin-bottom: 7px;
+                        "
+                        >FIRST NAME</span
+                      ><input
+                        value="Sam"
+                        style="
+                          width: 100%;
+                          border: 3px solid #0b0b0b;
+                          background: #f2efe6;
+                          padding: 17px 14px;
+                          font:
+                            400 14px 'JetBrains Mono',
+                            monospace;
+                          outline: none;
+                        "
+                        style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                    /></label>
+                    <label style="display: block"
+                      ><span
+                        style="
+                          display: block;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          margin-bottom: 7px;
+                        "
+                        >LAST NAME</span
+                      ><input
+                        value="Keijzer"
+                        style="
+                          width: 100%;
+                          border: 3px solid #0b0b0b;
+                          background: #f2efe6;
+                          padding: 17px 14px;
+                          font:
+                            400 14px 'JetBrains Mono',
+                            monospace;
+                          outline: none;
+                        "
+                        style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                    /></label>
+                    <label style="display: block; grid-column: 1/-1"
+                      ><span
+                        style="
+                          display: block;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          margin-bottom: 7px;
+                        "
+                        >ADDRESS</span
+                      ><input
+                        value="Westzeedijk 112"
+                        style="
+                          width: 100%;
+                          border: 3px solid #0b0b0b;
+                          background: #f2efe6;
+                          padding: 17px 14px;
+                          font:
+                            400 14px 'JetBrains Mono',
+                            monospace;
+                          outline: none;
+                        "
+                        style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                    /></label>
+                    <label style="display: block"
+                      ><span
+                        style="
+                          display: block;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          margin-bottom: 7px;
+                        "
+                        >CITY</span
+                      ><input
+                        value="Rotterdam"
+                        style="
+                          width: 100%;
+                          border: 3px solid #0b0b0b;
+                          background: #f2efe6;
+                          padding: 17px 14px;
+                          font:
+                            400 14px 'JetBrains Mono',
+                            monospace;
+                          outline: none;
+                        "
+                        style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                    /></label>
+                    <label style="display: block"
+                      ><span
+                        style="
+                          display: block;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          margin-bottom: 7px;
+                          color: #c7302b;
+                        "
+                        >POSTAL CODE</span
+                      ><input
+                        value="3016"
+                        style="
+                          width: 100%;
+                          border: 3px solid #c7302b;
+                          background: #f2efe6;
+                          padding: 17px 14px;
+                          font:
+                            400 14px 'JetBrains Mono',
+                            monospace;
+                          outline: none;
+                        "
+                      /><span
+                        style="
+                          display: block;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.1em;
+                          color: #c7302b;
+                          margin-top: 8px;
+                        "
+                        >! FOUR DIGITS AND TWO LETTERS, LIKE 3016 AK</span
+                      ></label
+                    >
+                    <label style="display: block"
+                      ><span
+                        style="
+                          display: block;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          margin-bottom: 7px;
+                        "
+                        >COUNTRY</span
+                      ><select
+                        style="
+                          width: 100%;
+                          border: 3px solid #0b0b0b;
+                          background: #f2efe6;
+                          padding: 17px 14px;
+                          font:
+                            400 14px 'JetBrains Mono',
+                            monospace;
+                          outline: none;
+                          appearance: none;
+                          cursor: pointer;
+                        "
+                      >
+                        <option>NETHERLANDS</option>
+                        <option>BELGIUM</option>
+                        <option>GERMANY</option>
+                      </select></label
+                    >
+                    <label style="display: block"
+                      ><span
+                        style="
+                          display: block;
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.16em;
+                          margin-bottom: 7px;
+                        "
+                        >PHONE</span
+                      ><input
+                        placeholder="+31 6 00 00 00 00"
+                        style="
+                          width: 100%;
+                          border: 3px solid #0b0b0b;
+                          background: #f2efe6;
+                          padding: 17px 14px;
+                          font:
+                            400 14px 'JetBrains Mono',
+                            monospace;
+                          outline: none;
+                        "
+                        style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                    /></label>
+                  </div>
+                </div>
+                <div>
+                  <div
+                    style="
+                      font:
+                        900 22px Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      text-transform: uppercase;
+                      letter-spacing: -0.02em;
+                      border-bottom: 3px solid #0b0b0b;
+                      padding-bottom: 10px;
+                      margin-bottom: 18px;
+                    "
+                  >
+                    03 — Delivery
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      flex-direction: column;
+                      gap: 10px;
+                      font:
+                        500 13px 'JetBrains Mono',
+                        monospace;
+                    "
+                  >
+                    <span
+                      style="
+                        border: 3px solid #1f2bff;
+                        background: #1f2bff;
+                        color: #fff;
+                        padding: 18px;
+                        display: flex;
+                        justify-content: space-between;
+                        cursor: pointer;
+                      "
+                      >◉ STANDARD — 2–4 DAYS<b>$12.00</b></span
+                    >
+                    <span
+                      style="
+                        border: 3px solid #0b0b0b;
+                        padding: 18px;
+                        display: flex;
+                        justify-content: space-between;
+                        cursor: pointer;
+                      "
+                      >○ EXPRESS — NEXT DAY<b>$28.00</b></span
+                    >
+                  </div>
+                </div>
+                <div>
+                  <div
+                    style="
+                      font:
+                        900 22px Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      text-transform: uppercase;
+                      letter-spacing: -0.02em;
+                      border-bottom: 3px solid #0b0b0b;
+                      padding-bottom: 10px;
+                      margin-bottom: 18px;
+                    "
+                  >
+                    04 — Payment
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      flex-direction: column;
+                      gap: 10px;
+                      font:
+                        500 13px 'JetBrains Mono',
+                        monospace;
+                    "
+                  >
+                    <span
+                      style="
+                        border: 3px solid #0b0b0b;
+                        background: #0b0b0b;
+                        color: #f2efe6;
+                        padding: 18px;
+                        cursor: pointer;
+                      "
+                      >◉ CARD</span
+                    >
+                    <span
+                      style="
+                        border: 3px solid #0b0b0b;
+                        padding: 18px;
+                        cursor: pointer;
+                      "
+                      >○ IDEAL</span
+                    >
+                    <span
+                      style="
+                        border: 3px solid #0b0b0b;
+                        padding: 18px;
+                        cursor: pointer;
+                      "
+                      >○ PAYPAL</span
+                    >
+                  </div>
+                </div>
+                <button
+                  onClick="{{ placeOrder }}"
+                  style="
+                    border: 3px solid #0b0b0b;
+                    background: #0b0b0b;
+                    color: #f2efe6;
+                    padding: 30px;
+                    font:
+                      700 17px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.18em;
+                    cursor: pointer;
+                    box-shadow: 8px 8px 0 #1f2bff;
+                  "
+                  style-hover="box-shadow:0 0 0;transform:translate(8px,8px)"
+                >
+                  PLACE ORDER — $346.80
+                </button>
+              </div>
+              <div
+                style="
+                  padding: 40px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 22px;
+                  background: #eae6da;
+                "
+              >
+                <div
+                  style="
+                    font:
+                      700 12px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.18em;
+                    padding-bottom: 14px;
+                    border-bottom: 3px solid #0b0b0b;
+                  "
+                >
+                  ORDER SUMMARY
+                </div>
+                <sc-for list="{{ cart }}" as="c" hint-placeholder-count="2">
+                  <div style="display: flex; gap: 14px; align-items: center">
+                    <div
+                      style="
+                        position: relative;
+                        width: 66px;
+                        height: 80px;
+                        background: #e2ded2;
+                        border: 3px solid #0b0b0b;
+                        flex: none;
+                      "
+                    >
+                      <image-slot
+                        id="{{ c.slot }}"
+                        shape="rect"
+                        placeholder="IMG"
+                      ></image-slot>
+                    </div>
+                    <div style="flex: 1">
+                      <div
+                        style="
+                          font:
+                            800 16px/1.1 Archivo,
+                            sans-serif;
+                        "
+                      >
+                        {{ c.n }}
+                      </div>
+                      <div
+                        style="
+                          font:
+                            400 10px 'JetBrains Mono',
+                            monospace;
+                          color: #6e6a5f;
+                          letter-spacing: 0.1em;
+                          margin-top: 5px;
+                        "
+                      >
+                        {{ c.v }} · QTY {{ c.q }}
+                      </div>
+                    </div>
+                    <div
+                      style="
+                        font:
+                          700 15px 'JetBrains Mono',
+                          monospace;
+                      "
+                    >
+                      {{ c.tot }}
+                    </div>
+                  </div>
+                </sc-for>
+                <div
+                  style="
+                    border-top: 3px solid #0b0b0b;
+                    padding-top: 18px;
+                    font:
+                      400 13px 'JetBrains Mono',
+                      monospace;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                  "
+                >
+                  <span style="display: flex; justify-content: space-between"
+                    >SUBTOTAL<b>$372.00</b></span
+                  ><span
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      color: #1f2bff;
+                    "
+                    >DISCOUNT · WORK10<b>−$37.20</b></span
+                  ><span style="display: flex; justify-content: space-between"
+                    >SHIPPING<b>$12.00</b></span
+                  >
+                </div>
+                <div
+                  style="
+                    border-top: 3px solid #0b0b0b;
+                    padding-top: 16px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: baseline;
+                  "
+                >
+                  <span
+                    style="
+                      font:
+                        900 24px Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      text-transform: uppercase;
+                      letter-spacing: -0.03em;
+                    "
+                    >Total</span
+                  ><span
+                    style="
+                      font:
+                        700 30px 'JetBrains Mono',
+                        monospace;
+                    "
+                    >$346.80</span
+                  >
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div
+                style="
+                  background: #1f2bff;
+                  color: #fff;
+                  padding: 80px 44px;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div
+                  style="
+                    font:
+                      700 12px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.24em;
+                    margin-bottom: 26px;
+                  "
+                >
+                  ✓ PAYMENT RECEIVED
+                </div>
+                <h1
+                  style="
+                    margin: 0;
+                    font:
+                      900 clamp(52px, 9vw, 140px)/0.82 Archivo,
+                      sans-serif;
+                    font-stretch: 112%;
+                    letter-spacing: -0.055em;
+                    text-transform: uppercase;
+                  "
+                >
+                  Thanks.<br />It's ours<br />to ship.
+                </h1>
+                <p
+                  style="
+                    margin: 30px 0 0;
+                    max-width: 48ch;
+                    font:
+                      400 17px/1.5 Archivo,
+                      sans-serif;
+                  "
+                >
+                  Confirmation is on its way to sam@studio.nl. We pack Mondays
+                  and Thursdays and email a tracking number the moment it
+                  leaves.
+                </p>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                  gap: 3px;
+                  background: #0b0b0b;
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div style="background: #f2efe6; padding: 26px">
+                  <div
+                    style="
+                      font:
+                        700 10px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.18em;
+                      color: #6e6a5f;
+                    "
+                  >
+                    ORDER NUMBER
+                  </div>
+                  <div
+                    style="
+                      font:
+                        700 24px 'JetBrains Mono',
+                        monospace;
+                      margin-top: 8px;
+                    "
+                  >
+                    #HG-24817
+                  </div>
+                </div>
+                <div style="background: #f2efe6; padding: 26px">
+                  <div
+                    style="
+                      font:
+                        700 10px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.18em;
+                      color: #6e6a5f;
+                    "
+                  >
+                    ESTIMATED DELIVERY
+                  </div>
+                  <div
+                    style="
+                      font:
+                        700 24px 'JetBrains Mono',
+                        monospace;
+                      margin-top: 8px;
+                    "
+                  >
+                    SEP 10–12
+                  </div>
+                </div>
+                <div style="background: #f2efe6; padding: 26px">
+                  <div
+                    style="
+                      font:
+                        700 10px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.18em;
+                      color: #6e6a5f;
+                    "
+                  >
+                    SHIPPING
+                  </div>
+                  <div
+                    style="
+                      font:
+                        700 24px 'JetBrains Mono',
+                        monospace;
+                      margin-top: 8px;
+                    "
+                  >
+                    STANDARD
+                  </div>
+                </div>
+                <div style="background: #0b0b0b; color: #f2efe6; padding: 26px">
+                  <div
+                    style="
+                      font:
+                        700 10px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.18em;
+                      color: #9a958a;
+                    "
+                  >
+                    TOTAL PAID
+                  </div>
+                  <div
+                    style="
+                      font:
+                        700 24px 'JetBrains Mono',
+                        monospace;
+                      margin-top: 8px;
+                    "
+                  >
+                    $346.80
+                  </div>
+                </div>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                "
+              >
+                <div style="border-right: 3px solid #0b0b0b">
+                  <div
+                    style="
+                      padding: 18px 32px;
+                      border-bottom: 3px solid #0b0b0b;
+                      font:
+                        700 12px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.18em;
+                    "
+                  >
+                    WHAT YOU BOUGHT
+                  </div>
+                  <sc-for list="{{ cart }}" as="c" hint-placeholder-count="2">
+                    <div
+                      style="
+                        display: flex;
+                        gap: 16px;
+                        align-items: center;
+                        padding: 20px 32px;
+                        border-bottom: 3px solid #0b0b0b;
+                      "
+                    >
+                      <div
+                        style="
+                          position: relative;
+                          width: 76px;
+                          height: 92px;
+                          background: #e2ded2;
+                          border: 3px solid #0b0b0b;
+                          flex: none;
+                        "
+                      >
+                        <image-slot
+                          id="{{ c.slot }}"
+                          shape="rect"
+                          placeholder="IMG"
+                        ></image-slot>
+                      </div>
+                      <div style="flex: 1">
+                        <div
+                          style="
+                            font:
+                              800 19px/1.1 Archivo,
+                              sans-serif;
+                          "
+                        >
+                          {{ c.n }}
+                        </div>
+                        <div
+                          style="
+                            font:
+                              400 11px 'JetBrains Mono',
+                              monospace;
+                            color: #6e6a5f;
+                            letter-spacing: 0.1em;
+                            margin-top: 6px;
+                          "
+                        >
+                          {{ c.v }} · QTY {{ c.q }}
+                        </div>
+                      </div>
+                      <div
+                        style="
+                          font:
+                            700 17px 'JetBrains Mono',
+                            monospace;
+                        "
+                      >
+                        {{ c.tot }}
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div
+                    style="
+                      padding: 24px 32px;
+                      font:
+                        400 13px 'JetBrains Mono',
+                        monospace;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 12px;
+                    "
+                  >
+                    <span style="display: flex; justify-content: space-between"
+                      >SUBTOTAL<b>$372.00</b></span
+                    ><span
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        color: #1f2bff;
+                      "
+                      >DISCOUNT<b>−$37.20</b></span
+                    ><span style="display: flex; justify-content: space-between"
+                      >SHIPPING<b>$12.00</b></span
+                    ><span
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        border-top: 3px solid #0b0b0b;
+                        padding-top: 14px;
+                        font-size: 18px;
+                        font-weight: 700;
+                      "
+                      >TOTAL<b>$346.80</b></span
+                    >
+                  </div>
+                </div>
+                <div
+                  style="
+                    padding: 32px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 26px;
+                  "
+                >
+                  <div>
+                    <div
+                      style="
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        color: #6e6a5f;
+                        margin-bottom: 10px;
+                      "
+                    >
+                      SHIPPING TO
+                    </div>
+                    <div
+                      style="
+                        font:
+                          400 14px/1.8 'JetBrains Mono',
+                          monospace;
+                      "
+                    >
+                      SAM KEIJZER<br />WESTZEEDIJK 112<br />3016 AK ROTTERDAM<br />NETHERLANDS
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      style="
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        color: #6e6a5f;
+                        margin-bottom: 10px;
+                      "
+                    >
+                      PAYMENT
+                    </div>
+                    <div
+                      style="
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                      "
+                    >
+                      CARD ···· 4417
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      margin-top: auto;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 12px;
+                    "
+                  >
+                    <button
+                      onClick="{{ goAccount }}"
+                      style="
+                        border: 3px solid #1f2bff;
+                        background: #1f2bff;
+                        color: #fff;
+                        padding: 22px;
+                        font:
+                          700 14px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        cursor: pointer;
+                      "
+                      style-hover="background:#0B0B0B;border-color:#0B0B0B"
+                    >
+                      VIEW ORDER
+                    </button>
+                    <button
+                      onClick="{{ goShop }}"
+                      style="
+                        border: 3px solid #0b0b0b;
+                        background: none;
+                        padding: 20px;
+                        font:
+                          700 14px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        cursor: pointer;
+                      "
+                      style-hover="background:#0B0B0B;color:#F2EFE6"
+                    >
+                      CONTINUE SHOPPING
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                min-height: 70vh;
+              "
+            >
+              <div style="border-right: 3px solid #0b0b0b; padding: 56px 44px">
+                <h1
+                  style="
+                    margin: 0 0 30px;
+                    font:
+                      900 clamp(36px, 4.6vw, 58px)/0.88 Archivo,
+                      sans-serif;
+                    font-stretch: 112%;
+                    letter-spacing: -0.045em;
+                    text-transform: uppercase;
+                  "
+                >
+                  Welcome<br />back.
+                </h1>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                    max-width: 420px;
+                  "
+                >
+                  <label style="display: block"
+                    ><span
+                      style="
+                        display: block;
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        margin-bottom: 7px;
+                      "
+                      >EMAIL</span
+                    ><input
+                      type="email"
+                      placeholder="you@email.com"
+                      style="
+                        width: 100%;
+                        border: 3px solid #0b0b0b;
+                        background: #f2efe6;
+                        padding: 19px 15px;
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                        outline: none;
+                      "
+                      style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                  /></label>
+                  <label style="display: block"
+                    ><span
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        margin-bottom: 7px;
+                      "
+                      ><span>PASSWORD</span
+                      ><span
+                        style="
+                          color: #1f2bff;
+                          text-decoration: underline;
+                          cursor: pointer;
+                        "
+                        >FORGOT?</span
+                      ></span
+                    ><input
+                      type="password"
+                      value="password"
+                      style="
+                        width: 100%;
+                        border: 3px solid #0b0b0b;
+                        background: #f2efe6;
+                        padding: 19px 15px;
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                        outline: none;
+                      "
+                      style-focus="border-color:#1F2BFF;box-shadow:5px 5px 0 #1F2BFF"
+                  /></label>
+                  <button
+                    onClick="{{ goAccount }}"
+                    style="
+                      border: 3px solid #0b0b0b;
+                      background: #0b0b0b;
+                      color: #f2efe6;
+                      padding: 24px;
+                      font:
+                        700 15px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.16em;
+                      cursor: pointer;
+                      box-shadow: 7px 7px 0 #1f2bff;
+                    "
+                    style-hover="box-shadow:0 0 0;transform:translate(7px,7px)"
+                  >
+                    LOG IN →
+                  </button>
+                  <button
+                    onClick="{{ goShop }}"
+                    style="
+                      border: 3px solid #0b0b0b;
+                      background: none;
+                      padding: 20px;
+                      font:
+                        700 12px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.14em;
+                      cursor: pointer;
+                    "
+                    style-hover="background:#0B0B0B;color:#F2EFE6"
+                  >
+                    CONTINUE AS GUEST
+                  </button>
+                </div>
+              </div>
+              <div
+                style="background: #0b0b0b; color: #f2efe6; padding: 56px 44px"
+              >
+                <h1
+                  style="
+                    margin: 0 0 30px;
+                    font:
+                      900 clamp(36px, 4.6vw, 58px)/0.88 Archivo,
+                      sans-serif;
+                    font-stretch: 112%;
+                    letter-spacing: -0.045em;
+                    text-transform: uppercase;
+                  "
+                >
+                  Create<br />account
+                </h1>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                    max-width: 420px;
+                  "
+                >
+                  <label style="display: block"
+                    ><span
+                      style="
+                        display: block;
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        margin-bottom: 7px;
+                      "
+                      >EMAIL</span
+                    ><input
+                      type="email"
+                      placeholder="you@email.com"
+                      style="
+                        width: 100%;
+                        border: 3px solid #f2efe6;
+                        background: none;
+                        color: #f2efe6;
+                        padding: 19px 15px;
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                        outline: none;
+                      "
+                      style-focus="border-color:#8FA0FF;box-shadow:5px 5px 0 #1F2BFF"
+                  /></label>
+                  <label style="display: block"
+                    ><span
+                      style="
+                        display: block;
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        margin-bottom: 7px;
+                      "
+                      >PASSWORD</span
+                    ><input
+                      type="password"
+                      placeholder="MIN. 8 CHARACTERS"
+                      style="
+                        width: 100%;
+                        border: 3px solid #f2efe6;
+                        background: none;
+                        color: #f2efe6;
+                        padding: 19px 15px;
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                        outline: none;
+                      "
+                      style-focus="border-color:#8FA0FF;box-shadow:5px 5px 0 #1F2BFF"
+                  /></label>
+                  <label style="display: block"
+                    ><span
+                      style="
+                        display: block;
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.16em;
+                        margin-bottom: 7px;
+                        color: #ff8a85;
+                      "
+                      >CONFIRM PASSWORD</span
+                    ><input
+                      type="password"
+                      value="pass"
+                      style="
+                        width: 100%;
+                        border: 3px solid #ff8a85;
+                        background: none;
+                        color: #f2efe6;
+                        padding: 19px 15px;
+                        font:
+                          400 14px 'JetBrains Mono',
+                          monospace;
+                        outline: none;
+                      "
+                    /><span
+                      style="
+                        display: block;
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.1em;
+                        color: #ff8a85;
+                        margin-top: 8px;
+                      "
+                      >! PASSWORDS DO NOT MATCH</span
+                    ></label
+                  >
+                  <button
+                    onClick="{{ goAccount }}"
+                    style="
+                      border: 3px solid #1f2bff;
+                      background: #1f2bff;
+                      color: #fff;
+                      padding: 24px;
+                      font:
+                        700 15px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.16em;
+                      cursor: pointer;
+                      box-shadow: 7px 7px 0 #f2efe6;
+                    "
+                    style-hover="box-shadow:0 0 0;transform:translate(7px,7px)"
+                  >
+                    CREATE ACCOUNT
+                  </button>
+                  <p
+                    style="
+                      margin: 0;
+                      font:
+                        400 10px/1.9 'JetBrains Mono',
+                        monospace;
+                      color: #9a958a;
+                    "
+                  >
+                    BY CREATING AN ACCOUNT YOU AGREE TO THE TERMS AND THE
+                    PRIVACY POLICY.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                  border-bottom: 3px solid #0b0b0b;
+                "
+              >
+                <div style="padding: 44px; border-right: 3px solid #0b0b0b">
+                  <div
+                    style="
+                      font:
+                        700 11px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.2em;
+                      color: #1f2bff;
+                      margin-bottom: 18px;
+                    "
+                  >
+                    YOUR ACCOUNT
+                  </div>
+                  <h1
+                    style="
+                      margin: 0;
+                      font:
+                        900 clamp(40px, 5.6vw, 74px)/0.86 Archivo,
+                        sans-serif;
+                      font-stretch: 112%;
+                      letter-spacing: -0.05em;
+                      text-transform: uppercase;
+                    "
+                  >
+                    Sam<br />Keijzer
+                  </h1>
+                  <div
+                    style="
+                      font:
+                        400 12px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.1em;
+                      color: #6e6a5f;
+                      margin-top: 18px;
+                    "
+                  >
+                    SAM@STUDIO.NL · MEMBER SINCE 2024
+                  </div>
+                </div>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 3px;
+                    background: #0b0b0b;
+                  "
+                >
+                  <div style="background: #1f2bff; color: #fff; padding: 26px">
+                    <div
+                      style="
+                        font:
+                          900 52px/1 Archivo,
+                          sans-serif;
+                        letter-spacing: -0.04em;
+                      "
+                    >
+                      7
+                    </div>
+                    <div
+                      style="
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        margin-top: 6px;
+                      "
+                    >
+                      ORDERS
+                    </div>
+                  </div>
+                  <div style="background: #f2efe6; padding: 26px">
+                    <div
+                      style="
+                        font:
+                          900 52px/1 Archivo,
+                          sans-serif;
+                        letter-spacing: -0.04em;
+                      "
+                    >
+                      4
+                    </div>
+                    <div
+                      style="
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        margin-top: 6px;
+                      "
+                    >
+                      SAVED
+                    </div>
+                  </div>
+                  <div style="background: #f2efe6; padding: 26px">
+                    <div
+                      style="
+                        font:
+                          900 52px/1 Archivo,
+                          sans-serif;
+                        letter-spacing: -0.04em;
+                      "
+                    >
+                      2
+                    </div>
+                    <div
+                      style="
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        margin-top: 6px;
+                      "
+                    >
+                      ADDRESSES
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      background: #0b0b0b;
+                      color: #f2efe6;
+                      padding: 26px;
+                      display: flex;
+                      flex-direction: column;
+                      justify-content: center;
+                    "
+                  >
+                    <div
+                      style="
+                        font:
+                          900 26px/1.05 Archivo,
+                          sans-serif;
+                        letter-spacing: -0.02em;
+                      "
+                    >
+                      IN<br />TRANSIT
+                    </div>
+                    <div
+                      style="
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.14em;
+                        color: #8fa0ff;
+                        margin-top: 8px;
+                      "
+                    >
+                      #HG-24817
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                "
+              >
+                <div style="border-right: 3px solid #0b0b0b">
+                  <div
+                    style="
+                      padding: 18px 32px;
+                      border-bottom: 3px solid #0b0b0b;
+                      display: flex;
+                      justify-content: space-between;
+                      font:
+                        700 12px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.18em;
+                    "
+                  >
+                    <span>ORDER HISTORY</span
+                    ><span style="color: #6e6a5f; cursor: pointer"
+                      >ALL 7 →</span
+                    >
+                  </div>
+                  <sc-for list="{{ orders }}" as="o" hint-placeholder-count="3">
+                    <div
+                      style="
+                        padding: 22px 32px;
+                        border-bottom: 3px solid #0b0b0b;
+                        display: flex;
+                        align-items: baseline;
+                        gap: 20px;
+                        flex-wrap: wrap;
+                        cursor: pointer;
+                      "
+                      style-hover="background:#fff"
+                    >
+                      <div
+                        style="
+                          font:
+                            900 26px Archivo,
+                            sans-serif;
+                          letter-spacing: -0.025em;
+                          min-width: 150px;
+                        "
+                      >
+                        {{ o.id }}
+                      </div>
+                      <div
+                        style="
+                          flex: 1;
+                          min-width: 160px;
+                          font:
+                            400 12px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.08em;
+                          color: #6e6a5f;
+                        "
+                      >
+                        {{ o.date }} · {{ o.items }}
+                      </div>
+                      <div
+                        style="
+                          font:
+                            700 10px 'JetBrains Mono',
+                            monospace;
+                          letter-spacing: 0.14em;
+                          border: 3px solid #0b0b0b;
+                          padding: 7px 11px;
+                        "
+                      >
+                        {{ o.status }}
+                      </div>
+                      <div
+                        style="
+                          font:
+                            700 18px 'JetBrains Mono',
+                            monospace;
+                        "
+                      >
+                        {{ o.total }}
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div
+                    style="
+                      padding: 18px 32px;
+                      border-bottom: 3px solid #0b0b0b;
+                      font:
+                        700 12px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.18em;
+                    "
+                  >
+                    SAVED PRODUCTS
+                  </div>
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: repeat(
+                        auto-fill,
+                        minmax(180px, 1fr)
+                      );
+                      gap: 3px;
+                      background: #0b0b0b;
+                    "
+                  >
+                    <sc-for list="{{ p4 }}" as="p" hint-placeholder-count="4">
+                      <div style="background: #f2efe6">
+                        <div
+                          style="
+                            position: relative;
+                            aspect-ratio: 4/5;
+                            background: #e2ded2;
+                          "
+                        >
+                          <image-slot
+                            id="{{ p.slot }}"
+                            shape="rect"
+                            placeholder="{{ p.n }}"
+                          ></image-slot>
+                        </div>
+                        <div
+                          style="padding: 14px; border-top: 3px solid #0b0b0b"
+                        >
+                          <div
+                            style="
+                              font:
+                                800 15px/1.1 Archivo,
+                                sans-serif;
+                            "
+                          >
+                            {{ p.n }}
+                          </div>
+                          <div
+                            style="
+                              font:
+                                500 13px 'JetBrains Mono',
+                                monospace;
+                              margin-top: 6px;
+                            "
+                          >
+                            {{ p.p }}
+                          </div>
+                          <button
+                            onClick="{{ addToCart }}"
+                            style="
+                              width: 100%;
+                              margin-top: 12px;
+                              border: 3px solid #0b0b0b;
+                              background: none;
+                              padding: 11px;
+                              font:
+                                700 10px 'JetBrains Mono',
+                                monospace;
+                              letter-spacing: 0.14em;
+                              cursor: pointer;
+                            "
+                            style-hover="background:#1F2BFF;color:#fff;border-color:#1F2BFF"
+                          >
+                            ADD TO CART
+                          </button>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div
+                  style="
+                    padding: 32px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 26px;
+                  "
+                >
+                  <div>
+                    <div
+                      style="
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        color: #6e6a5f;
+                        margin-bottom: 10px;
+                      "
+                    >
+                      DEFAULT ADDRESS
+                    </div>
+                    <div
+                      style="
+                        border: 3px solid #0b0b0b;
+                        padding: 20px;
+                        font:
+                          400 13px/1.8 'JetBrains Mono',
+                          monospace;
+                      "
+                    >
+                      SAM KEIJZER<br />WESTZEEDIJK 112<br />3016 AK ROTTERDAM<br />NETHERLANDS<br /><span
+                        style="
+                          font-weight: 700;
+                          text-decoration: underline;
+                          cursor: pointer;
+                        "
+                        >EDIT</span
+                      >
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      style="
+                        font:
+                          700 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.18em;
+                        color: #6e6a5f;
+                        margin-bottom: 10px;
+                      "
+                    >
+                      PERSONAL DETAILS
+                    </div>
+                    <div
+                      style="
+                        border: 3px solid #0b0b0b;
+                        padding: 20px;
+                        font:
+                          400 13px/1.8 'JetBrains Mono',
+                          monospace;
+                      "
+                    >
+                      SAM@STUDIO.NL<br />+31 6 ·· ·· ·· ··<br /><span
+                        style="
+                          font-weight: 700;
+                          text-decoration: underline;
+                          cursor: pointer;
+                        "
+                        >EDIT</span
+                      >
+                    </div>
+                  </div>
+                  <button
+                    onClick="{{ goHome }}"
+                    style="
+                      border: 3px solid #0b0b0b;
+                      background: none;
+                      padding: 20px;
+                      font:
+                        700 12px 'JetBrains Mono',
+                        monospace;
+                      letter-spacing: 0.16em;
+                      cursor: pointer;
+                    "
+                    style-hover="background:#C7302B;color:#fff;border-color:#C7302B"
+                  >
+                    LOG OUT
+                  </button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </main>
+
+        <sc-if value="{{ chromeFull }}" hint-placeholder-val="{{ true }}">
+          <footer
+            style="
+              background: #0b0b0b;
+              color: #f2efe6;
+              border-top: 3px solid #0b0b0b;
+            "
+          >
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 32px;
+                padding: 48px 44px;
+              "
+            >
+              <div
+                style="
+                  font:
+                    500 12px/2.2 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.1em;
+                "
+              >
+                <div
+                  style="font-weight: 700; color: #8fa0ff; margin-bottom: 10px"
+                >
+                  SHOP
+                </div>
+                OUTERWEAR<br />KNITWEAR<br />ACCESSORIES<br />OBJECTS
+              </div>
+              <div
+                style="
+                  font:
+                    500 12px/2.2 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.1em;
+                "
+              >
+                <div
+                  style="font-weight: 700; color: #8fa0ff; margin-bottom: 10px"
+                >
+                  HELP
+                </div>
+                SHIPPING<br />RETURNS<br />SIZE GUIDE<br />CONTACT
+              </div>
+              <div
+                style="
+                  font:
+                    500 12px/2.2 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.1em;
+                "
+              >
+                <div
+                  style="font-weight: 700; color: #8fa0ff; margin-bottom: 10px"
+                >
+                  STUDIO
+                </div>
+                ABOUT<br />MAKERS<br />INSTAGRAM
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-between;
+                  gap: 20px;
+                "
+              >
+                <div
+                  style="
+                    font:
+                      900 clamp(30px, 3.6vw, 46px)/0.9 Archivo,
+                      sans-serif;
+                    font-stretch: 112%;
+                    letter-spacing: -0.045em;
+                  "
+                >
+                  HARD<br />GOODS
+                </div>
+                <div
+                  style="
+                    font:
+                      400 10px/1.9 'JetBrains Mono',
+                      monospace;
+                    color: #9a958a;
+                  "
+                >
+                  © 2026 HARDGOODS BV<br />ROTTERDAM, NL
+                </div>
+              </div>
+            </div>
+          </footer>
+        </sc-if>
+
+        <sc-if value="{{ cartOpen }}" hint-placeholder-val="{{ false }}">
+          <div
+            style="
+              position: fixed;
+              inset: 0;
+              z-index: 60;
+              display: flex;
+              justify-content: flex-end;
+            "
+          >
+            <div
+              onClick="{{ closeCart }}"
+              style="
+                position: absolute;
+                inset: 0;
+                background: rgba(11, 11, 11, 0.55);
+              "
+            ></div>
+            <aside
+              style="
+                position: relative;
+                width: min(440px, 100%);
+                background: #f2efe6;
+                border-left: 3px solid #0b0b0b;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                overflow: auto;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  padding: 20px;
+                  background: #0b0b0b;
+                  color: #f2efe6;
+                  font:
+                    700 13px 'JetBrains Mono',
+                    monospace;
+                  letter-spacing: 0.18em;
+                  position: sticky;
+                  top: 0;
+                "
+              >
+                <span>CART [{{ cartCount }}]</span
+                ><button
+                  onClick="{{ closeCart }}"
+                  style="
+                    border: 0;
+                    background: none;
+                    color: #f2efe6;
+                    font:
+                      700 16px 'JetBrains Mono',
+                      monospace;
+                    cursor: pointer;
+                  "
+                >
+                  ✕
+                </button>
+              </div>
+              <sc-for list="{{ cart }}" as="c" hint-placeholder-count="2">
+                <div
+                  style="
+                    display: flex;
+                    gap: 14px;
+                    padding: 18px 20px;
+                    border-bottom: 3px solid #0b0b0b;
+                  "
+                >
+                  <div
+                    style="
+                      position: relative;
+                      width: 78px;
+                      height: 96px;
+                      background: #e2ded2;
+                      border: 3px solid #0b0b0b;
+                      flex: none;
+                    "
+                  >
+                    <image-slot
+                      id="{{ c.slot }}"
+                      shape="rect"
+                      placeholder="IMG"
+                    ></image-slot>
+                  </div>
+                  <div style="flex: 1">
+                    <div
+                      style="
+                        font:
+                          800 17px/1.1 Archivo,
+                          sans-serif;
+                      "
+                    >
+                      {{ c.n }}
+                    </div>
+                    <div
+                      style="
+                        font:
+                          400 10px 'JetBrains Mono',
+                          monospace;
+                        letter-spacing: 0.1em;
+                        color: #6e6a5f;
+                        margin-top: 6px;
+                      "
+                    >
+                      {{ c.v }}
+                    </div>
+                    <div
+                      style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-top: 12px;
+                      "
+                    >
+                      <span
+                        style="
+                          display: inline-flex;
+                          border: 3px solid #0b0b0b;
+                          font:
+                            700 12px 'JetBrains Mono',
+                            monospace;
+                        "
+                        ><span style="padding: 7px 10px; cursor: pointer"
+                          >−</span
+                        ><span
+                          style="
+                            padding: 7px 12px;
+                            border-left: 3px solid #0b0b0b;
+                            border-right: 3px solid #0b0b0b;
+                          "
+                          >{{ c.q }}</span
+                        ><span style="padding: 7px 10px; cursor: pointer"
+                          >+</span
+                        ></span
+                      ><span
+                        style="
+                          font:
+                            700 15px 'JetBrains Mono',
+                            monospace;
+                        "
+                        >{{ c.tot }}</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+              <div
+                style="
+                  padding: 20px;
+                  border-bottom: 3px solid #0b0b0b;
+                  display: flex;
+                  justify-content: space-between;
+                  font:
+                    700 16px 'JetBrains Mono',
+                    monospace;
+                "
+              >
+                <span>SUBTOTAL</span><span>$372.00</span>
+              </div>
+              <div
+                style="
+                  padding: 20px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 12px;
+                "
+              >
+                <button
+                  onClick="{{ goCheckout }}"
+                  style="
+                    border: 3px solid #1f2bff;
+                    background: #1f2bff;
+                    color: #fff;
+                    padding: 24px;
+                    font:
+                      700 15px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.16em;
+                    cursor: pointer;
+                    box-shadow: 7px 7px 0 #0b0b0b;
+                  "
+                  style-hover="box-shadow:0 0 0;transform:translate(7px,7px)"
+                >
+                  CHECKOUT
+                </button>
+                <button
+                  onClick="{{ goCart }}"
+                  style="
+                    border: 3px solid #0b0b0b;
+                    background: none;
+                    padding: 18px;
+                    font:
+                      700 12px 'JetBrains Mono',
+                      monospace;
+                    letter-spacing: 0.14em;
+                    cursor: pointer;
+                  "
+                  style-hover="background:#0B0B0B;color:#F2EFE6"
+                >
+                  VIEW FULL CART
+                </button>
+              </div>
+            </aside>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+          <div
+            style="
+              position: fixed;
+              left: 24px;
+              bottom: 24px;
+              z-index: 70;
+              background: #1f2bff;
+              color: #fff;
+              border: 3px solid #0b0b0b;
+              box-shadow: 7px 7px 0 #0b0b0b;
+              padding: 18px 24px;
+              font:
+                700 12px 'JetBrains Mono',
+                monospace;
+              letter-spacing: 0.14em;
+              animation: hgtoast 0.18s ease-out;
+            "
+          >
+            ✓ ADDED TO CART
+          </div>
+        </sc-if>
+
+        <div
+          style="
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 50;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            background: #0b0b0b;
+            border: 3px solid #0b0b0b;
+            max-width: min(560px, 90vw);
+            font:
+              700 9px 'JetBrains Mono',
+              monospace;
+            letter-spacing: 0.1em;
+          "
+        >
+          <button
+            onClick="{{ goHome }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            HOME
+          </button>
+          <button
+            onClick="{{ goShop }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            COLLECTION
+          </button>
+          <button
+            onClick="{{ goProduct }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            PRODUCT
+          </button>
+          <button
+            onClick="{{ goSearch }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            SEARCH
+          </button>
+          <button
+            onClick="{{ goCart }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            CART
+          </button>
+          <button
+            onClick="{{ goCheckout }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            CHECKOUT
+          </button>
+          <button
+            onClick="{{ goDone }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            CONFIRMED
+          </button>
+          <button
+            onClick="{{ goAuth }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            LOG IN
+          </button>
+          <button
+            onClick="{{ goAccount }}"
+            style="
+              border: 0;
+              background: #f2efe6;
+              padding: 9px 11px;
+              cursor: pointer;
+              font: inherit;
+            "
+            style-hover="background:#1F2BFF;color:#fff"
+          >
+            ACCOUNT
+          </button>
+        </div>
+      </div>
+    </x-dc>
+    <script type="text/x-dc" data-dc-script data-props="{}">
+      class Component extends DCLogic {
+        state = { screen: 'home', cartOpen: false, toast: false, qty: 1, size: 'M', color: 'SAND', specsOpen: true, shipOpen: false, query: 'canvas', empty: false };
+
+        go(s) { this.setState({ screen: s, cartOpen: false }); window.scrollTo(0, 0); }
+
+        componentWillUnmount() { clearTimeout(this._t); }
+
+        renderVals() {
+          const s = this.state;
+          const P = [
+            { n: 'CANVAS WORK JACKET', p: '$240', t: 'OUTERWEAR', s: 'IN STOCK', tag: 'SALE', slot: 'hg-p1' },
+            { n: 'MERINO CREW KNIT', p: '$185', t: 'KNITWEAR', s: 'IN STOCK', tag: '', slot: 'hg-p2' },
+            { n: 'STEEL DESK TRAY', p: '$65', t: 'OBJECTS', s: 'LOW STOCK — 3 LEFT', tag: 'NEW', slot: 'hg-p3' },
+            { n: 'CANVAS TOTE 40L', p: '$92', t: 'ACCESSORIES', s: 'IN STOCK', tag: 'NEW', slot: 'hg-p4' },
+            { n: 'RIBBED WOOL BEANIE', p: '$48', t: 'ACCESSORIES', s: 'IN STOCK', tag: '', slot: 'hg-p5' },
+            { n: 'HEAVY COTTON TEE', p: '$52', t: 'KNITWEAR', s: 'IN STOCK', tag: '', slot: 'hg-p6' },
+            { n: 'ENAMEL MUG SET', p: '$36', t: 'HOME', s: 'SOLD OUT', tag: '', slot: 'hg-p7' },
+            { n: 'WAXED CANVAS CAP', p: '$44', t: 'ACCESSORIES', s: 'LOW STOCK — 2 LEFT', tag: 'NEW', slot: 'hg-p8' },
+            { n: 'LINEN SHOP APRON', p: '$78', t: 'HOME', s: 'IN STOCK', tag: '', slot: 'hg-p9' }
+          ];
+          const cart = [
+            { n: 'CANVAS WORK JACKET', v: 'SAND / M', p: '$240.00', q: 1, tot: '$240.00', slot: 'hg-p1' },
+            { n: 'MERINO CREW KNIT', v: 'CHARCOAL / L', p: '$132.00', q: 1, tot: '$132.00', slot: 'hg-p2' }
+          ];
+          const orders = [
+            { id: '#HG-24817', date: '05 SEP 2026', items: '2 ITEMS', status: 'IN TRANSIT', total: '$346.80' },
+            { id: '#HG-24102', date: '18 JUL 2026', items: '1 ITEM', status: 'DELIVERED', total: '$92.00' },
+            { id: '#HG-23940', date: '02 MAY 2026', items: '3 ITEMS', status: 'DELIVERED', total: '$281.00' }
+          ];
+          const q = (s.query || '').trim().toLowerCase();
+          const results = q ? P.filter(p => (p.n + ' ' + p.t).toLowerCase().includes(q)) : P;
+          const ring = c => (s.color === c ? '3px solid #1F2BFF' : 'none');
+          const sz = k => (s.size === k ? '#F2EFE6' : 'transparent');
+          const szfg = k => (s.size === k ? '#0B0B0B' : '#F2EFE6');
+          const chromeless = s.screen === 'checkout' || s.screen === 'auth';
+
+          return {
+            chromeFull: !chromeless, chromeMinimal: chromeless,
+            isHome: s.screen === 'home', isShop: s.screen === 'shop', isProduct: s.screen === 'product',
+            isSearch: s.screen === 'search', isCart: s.screen === 'cart', isCheckout: s.screen === 'checkout',
+            isDone: s.screen === 'done', isAuth: s.screen === 'auth', isAccount: s.screen === 'account',
+            p3: P.slice(2, 5), p4: P.slice(0, 4), p9: P,
+            cart, orders, cartCount: cart.length, cartFull: true, cartEmpty: false,
+            results, hasResults: results.length > 0, noResults: results.length === 0,
+            resultLine: results.length + ' RESULT' + (results.length === 1 ? '' : 'S') + (q ? ' FOR “' + q.toUpperCase() + '”' : ''),
+            query: s.query,
+            qty: s.qty, size: s.size, colorLabel: s.color,
+            sandRing: ring('SAND'), coalRing: ring('CHARCOAL'), blueRing: ring('ULTRA'),
+            bgS: sz('S'), bgM: sz('M'), bgL: sz('L'), fgS: szfg('S'), fgM: szfg('M'), fgL: szfg('L'),
+            specsOpen: s.specsOpen, shipOpen: s.shipOpen,
+            specsIcon: s.specsOpen ? '−' : '+', shipIcon: s.shipOpen ? '−' : '+',
+            cartOpen: s.cartOpen, toast: s.toast,
+            noop: e => { if (e) { e.stopPropagation(); e.preventDefault(); } },
+            goHome: () => this.go('home'), goShop: () => this.go('shop'), goProduct: () => this.go('product'),
+            goSearch: () => this.go('search'), goCart: () => this.go('cart'), goCheckout: () => this.go('checkout'),
+            goDone: () => this.go('done'), goAuth: () => this.go('auth'), goAccount: () => this.go('account'),
+            openCart: () => this.setState({ cartOpen: true }),
+            closeCart: () => this.setState({ cartOpen: false }),
+            inc: () => this.setState(st => ({ qty: st.qty + 1 })),
+            dec: () => this.setState(st => ({ qty: Math.max(1, st.qty - 1) })),
+            pickS: () => this.setState({ size: 'S' }), pickM: () => this.setState({ size: 'M' }), pickL: () => this.setState({ size: 'L' }),
+            pickSand: () => this.setState({ color: 'SAND' }), pickCoal: () => this.setState({ color: 'CHARCOAL' }), pickBlue: () => this.setState({ color: 'ULTRA' }),
+            toggleSpecs: () => this.setState(st => ({ specsOpen: !st.specsOpen })),
+            toggleShip: () => this.setState(st => ({ shipOpen: !st.shipOpen })),
+            setQuery: e => this.setState({ query: e.target.value }),
+            clearQuery: () => this.setState({ query: '' }),
+            addToCart: e => {
+              if (e) e.stopPropagation();
+              this.setState({ toast: true, cartOpen: true });
+              clearTimeout(this._t);
+              this._t = setTimeout(() => this.setState({ toast: false }), 2200);
+            },
+            placeOrder: () => this.go('done')
+          };
+        }
+      }
+    </script>
+  </body>
+</html>

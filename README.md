@@ -11,6 +11,7 @@ E-commerce backend + storefront built as a portfolio project. Go/Gin API with JW
 | Auth              | JWT (HS256), bcrypt password hashing                        |
 | API docs          | Swagger (swaggo) — served at `/swagger/index.html`          |
 | Object storage     | MinIO (S3-compatible) — provisioned, not yet wired into code |
+| Message broker      | RabbitMQ — `order.created` events, async notification consumer |
 | Frontend          | [SolidStart](https://start.solidjs.com/) + Tailwind CSS v4    |
 | Reverse proxy      | Caddy (auto HTTPS)                                          |
 | Edge / CDN         | Cloudflare (planned — DNS + proxy in front of the VPS)      |
@@ -24,7 +25,7 @@ packages/
   server/   Go API (Gin, GORM, JWT) — see packages/server
   web/      SolidStart + Tailwind storefront (currently a hello-world scaffold)
   config/   shared TypeScript config (tsconfig base)
-docker-compose.yml   local infra: postgres, minio, the API, caddy
+docker-compose.yml   local infra: postgres, minio, rabbitmq, the API, notifier, caddy
 Caddyfile             reverse proxy config
 ```
 
@@ -64,19 +65,31 @@ Full interactive docs: run the server and open `http://localhost:8080/swagger/in
                  │ server │──────▶ │ postgres   │  app data
                  │ (Gin)  │        └───────────┘
                  └───┬────┘
-                      │
+                      ├──────────▶ ┌────────┐
+                      │            │ minio  │  S3-compatible object storage
+                      │            └────────┘
+                      │ publish "order.created"
                       ▼
-                 ┌────────┐
-                 │ minio  │  S3-compatible object storage (product images, etc.)
-                 └────────┘
+                 ┌──────────┐
+                 │ rabbitmq │  topic exchange "orders" (+ DLX for failed deliveries)
+                 └────┬─────┘
+                      │ consume
+                      ▼
+                 ┌──────────┐
+                 │ notifier │  separate process, stubs order-confirmation email
+                 └──────────┘
 ```
 
 - **postgres** (`postgres:16-alpine`) — single `kommers` database, all tables via GORM `AutoMigrate` on server boot.
 - **minio** (`minio/minio:latest`) — S3 API on `:9000`, console on `:9001`. Provisioned for future product-image uploads; nothing in the Go code reads it yet, but the compose env vars (`S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_USE_SSL`) are already named for when it's wired in.
+- **rabbitmq** (`rabbitmq:3-management-alpine`) — AMQP on `:5672`, management UI on `:15672`. Checkout publishes an `order.created` event (topic exchange `orders`) after the DB transaction commits — best-effort, a down broker never fails checkout. Failed deliveries dead-letter into `orders.dlx` → `notifications.order_created.dlq`.
 - **server** — built from `packages/server/Dockerfile` (multi-stage: `golang:1.26-alpine` builder → static binary on `alpine:3.20`). Not published to the host directly — only reachable through Caddy (`expose`, not `ports`).
+- **notifier** — separate process (`cmd/notifier`, same image, entrypoint overridden), consumes `order.created` and stubs sending a confirmation email (logs it). Reconnects with backoff if RabbitMQ restarts.
 - **caddy** — fronts everything on `:80`/`:443`. Locally it's plain HTTP; pointing the `Caddyfile`'s `:80` at a real domain instead is the only change needed to get automatic Let's Encrypt HTTPS on a VPS.
 
 Bring it up: `docker compose up -d` (or `podman compose up -d`).
+
+RabbitMQ management UI: `http://localhost:15672` (`kommers` / `kommers`).
 
 ### Planned, not yet configured
 
@@ -111,7 +124,10 @@ docker compose up -d       # http://localhost (via Caddy)
 | `DATABASE_URL`      | `postgres://amri@localhost:5432/kommers?sslmode=disable`             |
 | `JWT_SECRET`        | `dev-secret-change-me` — **override in any non-local environment**    |
 | `JWT_EXPIRY_HOURS`  | `24`                                                                  |
+| `RABBITMQ_URL`      | `amqp://kommers:kommers@localhost:5672/` — optional, checkout skips event publishing if unreachable |
+
+`cmd/notifier` (the RabbitMQ consumer) reads the same `RABBITMQ_URL` and runs as its own process: `go run ./cmd/notifier`.
 
 ## Status
 
-Auth, products, categories, seller onboarding, cart, profile/addresses, and checkout (cart → order, transactional stock decrement) are built and runtime-verified. Not yet built: payment integration (Stripe, deliberately deferred), product image upload (MinIO), admin UI (API-only for now).
+Auth, products, categories, seller onboarding, cart, profile/addresses, and checkout (cart → order, transactional stock decrement) are built and runtime-verified. The RabbitMQ producer/consumer (`order.created` → notifier) is built and compiles clean but **not yet runtime-verified against a live broker** — infra was written without spinning up podman/docker per instruction. Not yet built: payment integration (Stripe, deliberately deferred), product image upload (MinIO), admin UI (API-only for now).

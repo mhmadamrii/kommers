@@ -11,14 +11,14 @@ type Product struct {
 	Name        string   `gorm:"size:255;not null"`
 	Slug        string   `gorm:"size:255;uniqueIndex;not null"`
 	Description string   `gorm:"type:text"`
-	PriceCents  int64    `gorm:"not null"`
-	// OriginalPriceCents, when set and greater than PriceCents, means the
-	// product is on sale — the difference is a display-only discount, not a
-	// separate promotions/coupons system.
-	OriginalPriceCents *int64 `gorm:""`
-	Stock              int    `gorm:"not null;default:0"`
-	ImageURL           string `gorm:"size:512"`
-	IsActive           bool   `gorm:"not null;default:true"`
-	Location           string `gorm:"size:255"`
-	FreeShipping       bool   `gorm:"not null;default:false"`
+	// PriceCents is the base price. Any discount is computed dynamically
+	// from an active Campaign (internal/pricing) — never stored here.
+	PriceCents int64  `gorm:"not null"`
+	Stock      int    `gorm:"not null;default:0"`
+	ImageURL   string `gorm:"size:512"`
+	IsActive   bool   `gorm:"not null;default:true"`
+	Location   string `gorm:"size:255"`
+	// FreeShipping is the seller's standing shipping rule. A live campaign's
+	// own FreeShipping flag can additionally grant it during the sale.
+	FreeShipping bool `gorm:"not null;default:false"`
 }

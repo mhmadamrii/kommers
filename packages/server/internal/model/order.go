@@ -39,11 +39,15 @@ type Order struct {
 // edits or deletions don't rewrite order history.
 type OrderItem struct {
 	gorm.Model
-	OrderID       uint    `gorm:"not null;index"`
-	ProductID     uint    `gorm:"not null"`
-	Product       Product `gorm:"foreignKey:ProductID"`
-	ProductName   string  `gorm:"size:255;not null"`
-	Quantity      int     `gorm:"not null"`
-	PriceCents    int64   `gorm:"not null"`
-	SubtotalCents int64   `gorm:"not null"`
+	OrderID     uint    `gorm:"not null;index"`
+	ProductID   uint    `gorm:"not null"`
+	Product     Product `gorm:"foreignKey:ProductID"`
+	ProductName string  `gorm:"size:255;not null"`
+	Quantity    int     `gorm:"not null"`
+	PriceCents  int64   `gorm:"not null"`
+	// CampaignID records which campaign (if any) discounted this line item,
+	// for order-history audit — purely informational, checkout doesn't read
+	// it back.
+	CampaignID    *uint `gorm:"index"`
+	SubtotalCents int64 `gorm:"not null"`
 }

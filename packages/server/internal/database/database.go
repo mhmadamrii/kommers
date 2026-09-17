@@ -21,5 +21,6 @@ func Migrate(db *gorm.DB) error {
 		&model.Address{},
 		&model.Order{},
 		&model.OrderItem{},
+		&model.Campaign{},
 	)
 }

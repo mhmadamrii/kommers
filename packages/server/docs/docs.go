@@ -130,6 +130,159 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/campaigns": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "List campaigns (admin sees all, seller sees their own)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_handler.campaignResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Create a promotion campaign (admin: any target; seller: own products only)",
+                "parameters": [
+                    {
+                        "description": "Campaign payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.campaignRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.campaignResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/campaigns/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "campaigns"
+                ],
+                "summary": "Cancel a campaign (admin, or the owning seller)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Campaign ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/cart": {
             "get": {
                 "security": [
@@ -1319,6 +1472,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "github_com_mhmadamrii_kommers_server_internal_model.DiscountType": {
+            "type": "string",
+            "enum": [
+                "percent",
+                "fixed"
+            ],
+            "x-enum-varnames": [
+                "DiscountTypePercent",
+                "DiscountTypeFixed"
+            ]
+        },
         "github_com_mhmadamrii_kommers_server_internal_model.OrderStatus": {
             "type": "string",
             "enum": [
@@ -1476,6 +1640,104 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_handler.campaignRequest": {
+            "type": "object",
+            "required": [
+                "discount_type",
+                "discount_value",
+                "ends_at",
+                "name",
+                "starts_at"
+            ],
+            "properties": {
+                "category_id": {
+                    "description": "Exactly one of these two must be set — a campaign targets either a\nwhole category or an explicit list of products, never both.",
+                    "type": "integer"
+                },
+                "discount_type": {
+                    "enum": [
+                        "percent",
+                        "fixed"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType"
+                        }
+                    ]
+                },
+                "discount_value": {
+                    "type": "integer"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "free_shipping": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "product_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "stock_limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.campaignResponse": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType"
+                },
+                "discount_value": {
+                    "type": "integer"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "free_shipping": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "product_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "stock_limit": {
+                    "type": "integer"
+                },
+                "stock_used": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_handler.cartItemResponse": {
             "type": "object",
             "properties": {
@@ -1576,6 +1838,9 @@ const docTemplate = `{
         "internal_handler.orderItemResponse": {
             "type": "object",
             "properties": {
+                "campaign_id": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -1668,9 +1933,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "original_price_cents": {
-                    "type": "integer"
-                },
                 "price_cents": {
                     "type": "integer"
                 },
@@ -1683,6 +1945,12 @@ const docTemplate = `{
         "internal_handler.productResponse": {
             "type": "object",
             "properties": {
+                "campaign_ends_at": {
+                    "type": "string"
+                },
+                "campaign_id": {
+                    "type": "integer"
+                },
                 "category_id": {
                     "type": "integer"
                 },
@@ -1691,6 +1959,9 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string"
+                },
+                "effective_price_cents": {
+                    "type": "integer"
                 },
                 "free_shipping": {
                     "type": "boolean"
@@ -1710,13 +1981,11 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "original_price_cents": {
-                    "type": "integer"
-                },
                 "owner": {
                     "$ref": "#/definitions/internal_handler.ownerResponse"
                 },
                 "price_cents": {
+                    "description": "PriceCents is the base price; EffectivePriceCents is what a buyer pays\nright now (equal to PriceCents when no campaign is live).",
                     "type": "integer"
                 },
                 "slug": {

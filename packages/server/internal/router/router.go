@@ -31,6 +31,7 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher) *gi
 	profileHandler := handler.NewProfileHandler(db)
 	addressHandler := handler.NewAddressHandler(db)
 	orderHandler := handler.NewOrderHandler(db, events)
+	campaignHandler := handler.NewCampaignHandler(db)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -105,6 +106,16 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher) *gi
 		{
 			orders.GET("", orderHandler.List)
 			orders.GET("/:id", orderHandler.GetByID)
+		}
+
+		// Merchant-only: no public campaign browsing endpoint — buyers only
+		// ever see the discount via a product's effective_price_cents.
+		campaigns := v1.Group("/campaigns")
+		campaigns.Use(middleware.RequireAuth(jwtSecret), middleware.RequireRole(model.RoleAdmin, model.RoleSeller))
+		{
+			campaigns.POST("", campaignHandler.Create)
+			campaigns.GET("", campaignHandler.List)
+			campaigns.DELETE("/:id", campaignHandler.Delete)
 		}
 
 		// Dev-only: never mounted outside local development, so it doesn't

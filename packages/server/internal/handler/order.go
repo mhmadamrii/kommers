@@ -14,6 +14,7 @@ import (
 	"github.com/mhmadamrii/kommers/server/internal/event"
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
+	"github.com/mhmadamrii/kommers/server/internal/pricing"
 )
 
 // OrderEventPublisher is satisfied by *broker.Publisher. Kept as an
@@ -42,6 +43,7 @@ type orderItemResponse struct {
 	ProductName   string `json:"product_name"`
 	Quantity      int    `json:"quantity"`
 	PriceCents    int64  `json:"price_cents"`
+	CampaignID    *uint  `json:"campaign_id,omitempty"`
 	SubtotalCents int64  `json:"subtotal_cents"`
 }
 
@@ -64,6 +66,7 @@ func newOrderResponse(o model.Order) orderResponse {
 			ProductName:   item.ProductName,
 			Quantity:      item.Quantity,
 			PriceCents:    item.PriceCents,
+			CampaignID:    item.CampaignID,
 			SubtotalCents: item.SubtotalCents,
 		}
 	}
@@ -129,6 +132,15 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 			return err
 		}
 
+		// Candidate campaigns are read once outside the per-item lock; the
+		// actual authoritative check (still live, stock not exhausted) happens
+		// per-item below by re-locking that specific campaign row, same
+		// pattern as the product stock lock.
+		candidateCampaigns, err := pricing.LiveCampaigns(tx)
+		if err != nil {
+			return err
+		}
+
 		var total int64
 		for _, item := range cart.Items {
 			// Lock the row so two concurrent checkouts can't both read stale stock
@@ -146,14 +158,42 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 				return err
 			}
 
-			subtotal := item.PriceCents * int64(item.Quantity)
+			// Price is recomputed fresh here, never trusted from the cart
+			// snapshot — a promo that ended or sold out between add-to-cart
+			// and checkout must not still apply.
+			priceCents := product.PriceCents
+			var campaignID *uint
+
+			if candidate := pricing.BestFor(candidateCampaigns, product); candidate != nil {
+				var campaign model.Campaign
+				if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&campaign, candidate.ID).Error; err == nil {
+					if campaign.IsLive(time.Now()) {
+						fits := campaign.StockLimit == nil || *campaign.StockLimit-campaign.StockUsed >= item.Quantity
+						if fits {
+							priceCents = campaign.DiscountedPrice(product.PriceCents)
+							campaign.StockUsed += item.Quantity
+							if err := tx.Save(&campaign).Error; err != nil {
+								return err
+							}
+							cid := campaign.ID
+							campaignID = &cid
+						}
+						// Not enough campaign stock left for the whole line:
+						// v1 doesn't split one line across two price tiers,
+						// so this item simply checks out at the base price.
+					}
+				}
+			}
+
+			subtotal := priceCents * int64(item.Quantity)
 			total += subtotal
 			orderItem := model.OrderItem{
 				OrderID:       order.ID,
 				ProductID:     item.ProductID,
 				ProductName:   item.Product.Name,
 				Quantity:      item.Quantity,
-				PriceCents:    item.PriceCents,
+				PriceCents:    priceCents,
+				CampaignID:    campaignID,
 				SubtotalCents: subtotal,
 			}
 			if err := tx.Create(&orderItem).Error; err != nil {

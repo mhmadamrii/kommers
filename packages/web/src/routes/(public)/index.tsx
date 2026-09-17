@@ -52,15 +52,17 @@ const HERO_SLIDES = [
   },
 ];
 
-function useFlashSaleCountdown() {
-  const target = Date.now() + 3 * 60 * 60 * 1000 + 24 * 60 * 1000;
-  const [remaining, setRemaining] = createSignal(target - Date.now());
-
-  const interval = setInterval(() => setRemaining(Math.max(0, target - Date.now())), 1000);
+// Ticks against a real Campaign.ends_at (accessor, since it only becomes
+// known once products load) — no fabricated deadline.
+function useCountdown(targetMs: () => number | undefined) {
+  const [now, setNow] = createSignal(Date.now());
+  const interval = setInterval(() => setNow(Date.now()), 1000);
   onCleanup(() => clearInterval(interval));
 
   return createMemo(() => {
-    const total = remaining();
+    const target = targetMs();
+    if (target === undefined) return null;
+    const total = Math.max(0, target - now());
     const hours = Math.floor(total / 3_600_000);
     const minutes = Math.floor((total % 3_600_000) / 60_000);
     const seconds = Math.floor((total % 60_000) / 1000);
@@ -130,14 +132,22 @@ function SidePromo(props: { title: string; subtitle: string; tone: string }) {
 }
 
 export default function Home() {
-  const countdown = useFlashSaleCountdown();
-
   const categoriesQuery = useCategoriesQuery();
   const categories = () => categoriesQuery.data ?? [];
 
   const productsQuery = useProductsQuery(() => ({ limit: 20 }));
   const products = () => productsQuery.data ?? [];
-  const flashSaleProducts = createMemo(() => products().filter((p) => p.original_price_cents));
+  const flashSaleProducts = createMemo(() => products().filter((p) => p.campaign_id));
+
+  // Soonest-ending live campaign among the flash-sale products — real
+  // deadline, not a fabricated one.
+  const flashSaleEndsAt = createMemo(() => {
+    const ends = flashSaleProducts()
+      .map((p) => (p.campaign_ends_at ? new Date(p.campaign_ends_at).getTime() : undefined))
+      .filter((ms): ms is number => ms !== undefined);
+    return ends.length > 0 ? Math.min(...ends) : undefined;
+  });
+  const countdown = useCountdown(flashSaleEndsAt);
 
   return (
     <div class='mx-auto flex max-w-7xl flex-col gap-10 px-4 py-6 sm:px-6'>
@@ -186,44 +196,48 @@ export default function Home() {
         </div>
       </section>
 
-      <section>
-        <div class='mb-4 flex items-center justify-between'>
-          <div class='flex items-center gap-2'>
-            <span class='flex size-7 items-center justify-center rounded-full bg-destructive text-white'>
-              <Zap class='size-4 fill-white' aria-hidden='true' />
-            </span>
-            <h2 class='text-lg font-bold text-foreground'>Flash Sale</h2>
-            <Badge variant='destructive' class='font-mono tabular-nums'>
-              {countdown()}
-            </Badge>
+      <Show when={productsQuery.isLoading || flashSaleProducts().length > 0}>
+        <section>
+          <div class='mb-4 flex items-center justify-between'>
+            <div class='flex items-center gap-2'>
+              <span class='flex size-7 items-center justify-center rounded-full bg-destructive text-white'>
+                <Zap class='size-4 fill-white' aria-hidden='true' />
+              </span>
+              <h2 class='text-lg font-bold text-foreground'>Flash Sale</h2>
+              <Show when={countdown()}>
+                <Badge variant='destructive' class='font-mono tabular-nums'>
+                  {countdown()}
+                </Badge>
+              </Show>
+            </div>
+            <A href='/products' class='flex items-center gap-0.5 text-sm font-medium text-primary hover:underline'>
+              Lihat Semua
+              <ChevronRight class='size-4' aria-hidden='true' />
+            </A>
           </div>
-          <A href='/products' class='flex items-center gap-0.5 text-sm font-medium text-primary hover:underline'>
-            Lihat Semua
-            <ChevronRight class='size-4' aria-hidden='true' />
-          </A>
-        </div>
 
-        <Show
-          when={!productsQuery.isLoading}
-          fallback={
-            <div class='grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6'>
-              <For each={Array(6).fill(0)}>
-                {() => <Skeleton class='aspect-[3/4] w-full rounded-xl' />}
+          <Show
+            when={!productsQuery.isLoading}
+            fallback={
+              <div class='grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6'>
+                <For each={Array(6).fill(0)}>
+                  {() => <Skeleton class='aspect-[3/4] w-full rounded-xl' />}
+                </For>
+              </div>
+            }
+          >
+            <div class='scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:px-0 lg:grid-cols-6'>
+              <For each={flashSaleProducts()}>
+                {(product) => (
+                  <div class='w-40 shrink-0 sm:w-auto'>
+                    <ProductCard product={product} />
+                  </div>
+                )}
               </For>
             </div>
-          }
-        >
-          <div class='scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:px-0 lg:grid-cols-6'>
-            <For each={flashSaleProducts()}>
-              {(product) => (
-                <div class='w-40 shrink-0 sm:w-auto'>
-                  <ProductCard product={product} />
-                </div>
-              )}
-            </For>
-          </div>
-        </Show>
-      </section>
+          </Show>
+        </section>
+      </Show>
 
       <section>
         <div class='mb-4 flex items-center gap-2'>

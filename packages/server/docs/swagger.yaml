@@ -1,5 +1,13 @@
 basePath: /
 definitions:
+  github_com_mhmadamrii_kommers_server_internal_model.DiscountType:
+    enum:
+    - percent
+    - fixed
+    type: string
+    x-enum-varnames:
+    - DiscountTypePercent
+    - DiscountTypeFixed
   github_com_mhmadamrii_kommers_server_internal_model.OrderStatus:
     enum:
     - pending
@@ -109,6 +117,73 @@ definitions:
       user:
         $ref: '#/definitions/internal_handler.userResponse'
     type: object
+  internal_handler.campaignRequest:
+    properties:
+      category_id:
+        description: |-
+          Exactly one of these two must be set — a campaign targets either a
+          whole category or an explicit list of products, never both.
+        type: integer
+      discount_type:
+        allOf:
+        - $ref: '#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType'
+        enum:
+        - percent
+        - fixed
+      discount_value:
+        type: integer
+      ends_at:
+        type: string
+      free_shipping:
+        type: boolean
+      name:
+        type: string
+      product_ids:
+        items:
+          type: integer
+        type: array
+      starts_at:
+        type: string
+      stock_limit:
+        type: integer
+    required:
+    - discount_type
+    - discount_value
+    - ends_at
+    - name
+    - starts_at
+    type: object
+  internal_handler.campaignResponse:
+    properties:
+      category_id:
+        type: integer
+      created_at:
+        type: string
+      discount_type:
+        $ref: '#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType'
+      discount_value:
+        type: integer
+      ends_at:
+        type: string
+      free_shipping:
+        type: boolean
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      product_ids:
+        items:
+          type: integer
+        type: array
+      starts_at:
+        type: string
+      stock_limit:
+        type: integer
+      stock_used:
+        type: integer
+    type: object
   internal_handler.cartItemResponse:
     properties:
       id:
@@ -174,6 +249,8 @@ definitions:
     type: object
   internal_handler.orderItemResponse:
     properties:
+      campaign_id:
+        type: integer
       id:
         type: integer
       price_cents:
@@ -231,8 +308,6 @@ definitions:
         type: string
       name:
         type: string
-      original_price_cents:
-        type: integer
       price_cents:
         type: integer
       stock:
@@ -245,12 +320,18 @@ definitions:
     type: object
   internal_handler.productResponse:
     properties:
+      campaign_ends_at:
+        type: string
+      campaign_id:
+        type: integer
       category_id:
         type: integer
       created_at:
         type: string
       description:
         type: string
+      effective_price_cents:
+        type: integer
       free_shipping:
         type: boolean
       id:
@@ -263,11 +344,12 @@ definitions:
         type: string
       name:
         type: string
-      original_price_cents:
-        type: integer
       owner:
         $ref: '#/definitions/internal_handler.ownerResponse'
       price_cents:
+        description: |-
+          PriceCents is the base price; EffectivePriceCents is what a buyer pays
+          right now (equal to PriceCents when no campaign is live).
         type: integer
       slug:
         type: string
@@ -395,6 +477,103 @@ paths:
       summary: Create a new user account
       tags:
       - auth
+  /api/v1/campaigns:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.campaignResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List campaigns (admin sees all, seller sees their own)
+      tags:
+      - campaigns
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Campaign payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.campaignRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handler.campaignResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 'Create a promotion campaign (admin: any target; seller: own products
+        only)'
+      tags:
+      - campaigns
+  /api/v1/campaigns/{id}:
+    delete:
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Cancel a campaign (admin, or the owning seller)
+      tags:
+      - campaigns
   /api/v1/cart:
     get:
       produces:

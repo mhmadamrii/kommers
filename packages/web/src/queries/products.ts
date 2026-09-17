@@ -18,8 +18,12 @@ export type Product = {
   name: string;
   slug: string;
   description: string;
+  // price_cents is the base price; effective_price_cents is what a buyer
+  // pays right now — equal to price_cents unless a Campaign is live.
   price_cents: number;
-  original_price_cents?: number;
+  effective_price_cents: number;
+  campaign_id?: number;
+  campaign_ends_at?: string;
   stock: number;
   image_url: string;
   is_active: boolean;
@@ -30,9 +34,9 @@ export type Product = {
 };
 
 export function discountPercent(product: Product): number | null {
-  if (!product.original_price_cents) return null;
+  if (!product.campaign_id || product.effective_price_cents >= product.price_cents) return null;
   return Math.round(
-    ((product.original_price_cents - product.price_cents) / product.original_price_cents) * 100,
+    ((product.price_cents - product.effective_price_cents) / product.price_cents) * 100,
   );
 }
 
@@ -52,9 +56,9 @@ function sortProducts(products: Product[], sort: string): Product[] {
   const sorted = [...products];
   switch (sort) {
     case 'price_asc':
-      return sorted.sort((a, b) => a.price_cents - b.price_cents);
+      return sorted.sort((a, b) => a.effective_price_cents - b.effective_price_cents);
     case 'price_desc':
-      return sorted.sort((a, b) => b.price_cents - a.price_cents);
+      return sorted.sort((a, b) => b.effective_price_cents - a.effective_price_cents);
     default:
       return sorted;
   }
@@ -69,10 +73,10 @@ async function fetchProducts(filters: ProductFilters): Promise<Product[]> {
   let products = await apiFetch<Product[]>(`/api/v1/products?${params.toString()}`);
 
   if (filters.minPriceCents !== undefined) {
-    products = products.filter((p) => p.price_cents >= filters.minPriceCents!);
+    products = products.filter((p) => p.effective_price_cents >= filters.minPriceCents!);
   }
   if (filters.maxPriceCents !== undefined) {
-    products = products.filter((p) => p.price_cents <= filters.maxPriceCents!);
+    products = products.filter((p) => p.effective_price_cents <= filters.maxPriceCents!);
   }
 
   return sortProducts(products, filters.sort ?? 'relevant');

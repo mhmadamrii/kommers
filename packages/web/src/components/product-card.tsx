@@ -34,12 +34,12 @@ export function ProductCard(props: { product: Product }) {
 
         <div class='flex items-baseline gap-1.5'>
           <span class='text-base font-semibold text-foreground'>
-            {formatPriceCents(props.product.price_cents)}
+            {formatPriceCents(props.product.effective_price_cents)}
           </span>
         </div>
-        <Show when={props.product.original_price_cents}>
+        <Show when={discount()}>
           <span class='-mt-1 text-xs text-muted-foreground line-through'>
-            {formatPriceCents(props.product.original_price_cents!)}
+            {formatPriceCents(props.product.price_cents)}
           </span>
         </Show>
 

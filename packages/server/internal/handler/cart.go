@@ -9,6 +9,7 @@ import (
 
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
+	"github.com/mhmadamrii/kommers/server/internal/pricing"
 )
 
 type CartHandler struct {
@@ -131,6 +132,13 @@ func (h *CartHandler) AddItem(c *gin.Context) {
 		return
 	}
 
+	campaigns, err := pricing.LiveCampaigns(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	effectivePrice, _, _ := pricing.Effective(campaigns, product)
+
 	cart, err := h.getOrCreateCart(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -149,7 +157,7 @@ func (h *CartHandler) AddItem(c *gin.Context) {
 			CartID:     cart.ID,
 			ProductID:  product.ID,
 			Quantity:   req.Quantity,
-			PriceCents: product.PriceCents,
+			PriceCents: effectivePrice,
 		}
 		if err := h.DB.Create(&item).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -162,7 +170,7 @@ func (h *CartHandler) AddItem(c *gin.Context) {
 			return
 		}
 		item.Quantity = newQuantity
-		item.PriceCents = product.PriceCents
+		item.PriceCents = effectivePrice
 		if err := h.DB.Save(&item).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			return
@@ -222,8 +230,15 @@ func (h *CartHandler) UpdateItem(c *gin.Context) {
 		return
 	}
 
+	campaigns, err := pricing.LiveCampaigns(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	effectivePrice, _, _ := pricing.Effective(campaigns, item.Product)
+
 	item.Quantity = req.Quantity
-	item.PriceCents = item.Product.PriceCents
+	item.PriceCents = effectivePrice
 	if err := h.DB.Save(&item).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return

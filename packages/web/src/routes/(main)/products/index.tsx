@@ -18,10 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select';
+import { Skeleton } from '~/components/ui/skeleton';
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field';
 import { EmptyState } from '~/components/empty-state';
 import { ProductCard } from '~/components/product-card';
-import { dummyCategories, dummyProducts, type DummyProduct } from '~/lib/dummy-data';
+import { dummyCategories } from '~/lib/dummy-data';
+import { useProductsQuery } from '~/queries/products';
 
 type SortOption = { value: string; label: string };
 
@@ -34,22 +36,6 @@ const SORT_OPTIONS: SortOption[] = [
 ];
 
 const RATING_OPTIONS = [4.5, 4, 3];
-
-function sortProducts(products: DummyProduct[], sort: string): DummyProduct[] {
-  const sorted = [...products];
-  switch (sort) {
-    case 'newest':
-      return sorted.reverse();
-    case 'price_asc':
-      return sorted.sort((a, b) => a.priceCents - b.priceCents);
-    case 'price_desc':
-      return sorted.sort((a, b) => b.priceCents - a.priceCents);
-    case 'rating':
-      return sorted.sort((a, b) => b.rating - a.rating);
-    default:
-      return sorted;
-  }
-}
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -72,21 +58,17 @@ export default function Products() {
     dummyCategories.find((c) => c.id === categoryId()),
   );
 
-  const filtered = createMemo(() => {
-    const minCents = minPrice() ? Number(minPrice()) * 100 : undefined;
-    const maxCents = maxPrice() ? Number(maxPrice()) * 100 : undefined;
+  const filters = createMemo(() => ({
+    categoryId: categoryId(),
+    q: query(),
+    minPriceCents: minPrice() ? Number(minPrice()) * 100 : undefined,
+    maxPriceCents: maxPrice() ? Number(maxPrice()) * 100 : undefined,
+    minRating: minRating(),
+    sort: sort().value,
+  }));
 
-    const result = dummyProducts.filter((product) => {
-      if (categoryId() !== undefined && product.categoryId !== categoryId()) return false;
-      if (query() && !product.name.toLowerCase().includes(query())) return false;
-      if (minCents !== undefined && product.priceCents < minCents) return false;
-      if (maxCents !== undefined && product.priceCents > maxCents) return false;
-      if (minRating() !== undefined && product.rating < minRating()!) return false;
-      return true;
-    });
-
-    return sortProducts(result, sort().value);
-  });
+  const productsQuery = useProductsQuery(filters);
+  const products = createMemo(() => productsQuery.data ?? []);
 
   function selectCategory(id: number | undefined) {
     setCategoryId(id);
@@ -196,7 +178,11 @@ export default function Products() {
             Hasil untuk &ldquo;{toSingle(searchParams.q)}&rdquo;
           </Show>
         </h1>
-        <p class='text-sm text-muted-foreground'>{filtered().length} produk ditemukan</p>
+        <p class='text-sm text-muted-foreground'>
+          <Show when={!productsQuery.isLoading} fallback='Memuat...'>
+            {products().length} produk ditemukan
+          </Show>
+        </p>
       </div>
 
       <div class='flex gap-6'>
@@ -250,23 +236,34 @@ export default function Products() {
           </div>
 
           <Show
-            when={filtered().length > 0}
+            when={!productsQuery.isLoading}
             fallback={
-              <EmptyState
-                icon={PackageSearch}
-                title='Produk tidak ditemukan'
-                description='Coba ubah kata kunci pencarian atau reset filter yang sedang aktif.'
-                action={
-                  <Button variant='outline' onClick={clearFilters}>
-                    Reset Filter
-                  </Button>
-                }
-              />
+              <div class='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+                <For each={Array(8).fill(0)}>
+                  {() => <Skeleton class='aspect-[3/4] w-full rounded-xl' />}
+                </For>
+              </div>
             }
           >
-            <div class='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
-              <For each={filtered()}>{(product) => <ProductCard product={product} />}</For>
-            </div>
+            <Show
+              when={products().length > 0}
+              fallback={
+                <EmptyState
+                  icon={PackageSearch}
+                  title='Produk tidak ditemukan'
+                  description='Coba ubah kata kunci pencarian atau reset filter yang sedang aktif.'
+                  action={
+                    <Button variant='outline' onClick={clearFilters}>
+                      Reset Filter
+                    </Button>
+                  }
+                />
+              }
+            >
+              <div class='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+                <For each={products()}>{(product) => <ProductCard product={product} />}</For>
+              </div>
+            </Show>
           </Show>
         </div>
       </div>

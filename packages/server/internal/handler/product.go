@@ -24,13 +24,16 @@ func NewProductHandler(db *gorm.DB) *ProductHandler {
 }
 
 type productRequest struct {
-	CategoryID  uint   `json:"category_id" binding:"required"`
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
-	PriceCents  int64  `json:"price_cents" binding:"required,gt=0"`
-	Stock       int    `json:"stock" binding:"gte=0"`
-	ImageURL    string `json:"image_url"`
-	IsActive    *bool  `json:"is_active"`
+	CategoryID         uint   `json:"category_id" binding:"required"`
+	Name               string `json:"name" binding:"required"`
+	Description        string `json:"description"`
+	PriceCents         int64  `json:"price_cents" binding:"required,gt=0"`
+	OriginalPriceCents *int64 `json:"original_price_cents"`
+	Stock              int    `json:"stock" binding:"gte=0"`
+	ImageURL           string `json:"image_url"`
+	IsActive           *bool  `json:"is_active"`
+	Location           string `json:"location"`
+	FreeShipping       bool   `json:"free_shipping"`
 }
 
 type ownerResponse struct {
@@ -40,18 +43,21 @@ type ownerResponse struct {
 }
 
 type productResponse struct {
-	ID          uint          `json:"id"`
-	CategoryID  uint          `json:"category_id"`
-	Owner       ownerResponse `json:"owner"`
-	Name        string        `json:"name"`
-	Slug        string        `json:"slug"`
-	Description string        `json:"description"`
-	PriceCents  int64         `json:"price_cents"`
-	Stock       int           `json:"stock"`
-	ImageURL    string        `json:"image_url"`
-	IsActive    bool          `json:"is_active"`
-	CreatedAt   time.Time     `json:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at"`
+	ID                 uint          `json:"id"`
+	CategoryID         uint          `json:"category_id"`
+	Owner              ownerResponse `json:"owner"`
+	Name               string        `json:"name"`
+	Slug               string        `json:"slug"`
+	Description        string        `json:"description"`
+	PriceCents         int64         `json:"price_cents"`
+	OriginalPriceCents *int64        `json:"original_price_cents,omitempty"`
+	Stock              int           `json:"stock"`
+	ImageURL           string        `json:"image_url"`
+	IsActive           bool          `json:"is_active"`
+	Location           string        `json:"location"`
+	FreeShipping       bool          `json:"free_shipping"`
+	CreatedAt          time.Time     `json:"created_at"`
+	UpdatedAt          time.Time     `json:"updated_at"`
 }
 
 func newProductResponse(p model.Product) productResponse {
@@ -63,15 +69,18 @@ func newProductResponse(p model.Product) productResponse {
 			Email:    p.Owner.Email,
 			FullName: p.Owner.FullName,
 		},
-		Name:        p.Name,
-		Slug:        p.Slug,
-		Description: p.Description,
-		PriceCents:  p.PriceCents,
-		Stock:       p.Stock,
-		ImageURL:    p.ImageURL,
-		IsActive:    p.IsActive,
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
+		Name:               p.Name,
+		Slug:               p.Slug,
+		Description:        p.Description,
+		PriceCents:         p.PriceCents,
+		OriginalPriceCents: p.OriginalPriceCents,
+		Stock:              p.Stock,
+		ImageURL:           p.ImageURL,
+		IsActive:           p.IsActive,
+		Location:           p.Location,
+		FreeShipping:       p.FreeShipping,
+		CreatedAt:          p.CreatedAt,
+		UpdatedAt:          p.UpdatedAt,
 	}
 }
 
@@ -206,15 +215,18 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	}
 
 	product := model.Product{
-		CategoryID:  req.CategoryID,
-		OwnerID:     c.MustGet(middleware.CtxUserID).(uint),
-		Name:        req.Name,
-		Slug:        slug,
-		Description: req.Description,
-		PriceCents:  req.PriceCents,
-		Stock:       req.Stock,
-		ImageURL:    req.ImageURL,
-		IsActive:    isActive,
+		CategoryID:         req.CategoryID,
+		OwnerID:            c.MustGet(middleware.CtxUserID).(uint),
+		Name:               req.Name,
+		Slug:               slug,
+		Description:        req.Description,
+		PriceCents:         req.PriceCents,
+		OriginalPriceCents: req.OriginalPriceCents,
+		Stock:              req.Stock,
+		ImageURL:           req.ImageURL,
+		IsActive:           isActive,
+		Location:           req.Location,
+		FreeShipping:       req.FreeShipping,
 	}
 	if err := h.DB.Create(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
@@ -282,9 +294,12 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	product.Slug = slug
 	product.Description = req.Description
 	product.PriceCents = req.PriceCents
+	product.OriginalPriceCents = req.OriginalPriceCents
 	product.Stock = req.Stock
 	product.ImageURL = req.ImageURL
 	product.IsActive = isActive
+	product.Location = req.Location
+	product.FreeShipping = req.FreeShipping
 
 	if err := h.DB.Save(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})

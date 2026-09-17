@@ -1,9 +1,9 @@
-import { Star, Truck } from 'lucide-solid';
+import { MapPin, Truck } from 'lucide-solid';
 import { Show } from 'solid-js';
 import { Badge } from '~/components/ui/badge';
 import { Card } from '~/components/ui/card';
 import { formatPriceCents } from '~/lib/currency';
-import { discountPercent, type DummyProduct } from '~/lib/dummy-data';
+import { discountPercent, type Product } from '~/queries/products';
 
 const PLACEHOLDER_TONES = [
   'from-primary/15 to-primary/5',
@@ -13,7 +13,7 @@ const PLACEHOLDER_TONES = [
   'from-violet-500/15 to-violet-500/5',
 ];
 
-export function ProductCard(props: { product: DummyProduct }) {
+export function ProductCard(props: { product: Product }) {
   const discount = () => discountPercent(props.product);
   const tone = () => PLACEHOLDER_TONES[props.product.id % PLACEHOLDER_TONES.length];
 
@@ -34,27 +34,25 @@ export function ProductCard(props: { product: DummyProduct }) {
 
         <div class='flex items-baseline gap-1.5'>
           <span class='text-base font-semibold text-foreground'>
-            {formatPriceCents(props.product.priceCents)}
+            {formatPriceCents(props.product.price_cents)}
           </span>
         </div>
-        <Show when={props.product.originalPriceCents}>
+        <Show when={props.product.original_price_cents}>
           <span class='-mt-1 text-xs text-muted-foreground line-through'>
-            {formatPriceCents(props.product.originalPriceCents!)}
+            {formatPriceCents(props.product.original_price_cents!)}
           </span>
         </Show>
 
-        <div class='flex items-center gap-1 text-xs text-muted-foreground'>
-          <Star class='size-3.5 fill-amber-400 text-amber-400' />
-          <span>{props.product.rating.toFixed(1)}</span>
-          <span aria-hidden='true'>·</span>
-          <span>{props.product.soldLabel}</span>
-        </div>
-
         <div class='flex items-center justify-between'>
-          <span class='text-xs text-muted-foreground'>{props.product.location}</span>
-          <Show when={props.product.freeShipping}>
+          <Show when={props.product.location} fallback={<span />}>
+            <span class='flex items-center gap-0.5 text-xs text-muted-foreground'>
+              <MapPin class='size-3 shrink-0' aria-hidden='true' />
+              {props.product.location}
+            </span>
+          </Show>
+          <Show when={props.product.free_shipping}>
             <span class='flex items-center gap-0.5 text-xs font-medium text-primary'>
-              <Truck class='size-3.5' />
+              <Truck class='size-3.5' aria-hidden='true' />
               Gratis Ongkir
             </span>
           </Show>

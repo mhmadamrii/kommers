@@ -221,12 +221,18 @@ definitions:
         type: integer
       description:
         type: string
+      free_shipping:
+        type: boolean
       image_url:
         type: string
       is_active:
         type: boolean
+      location:
+        type: string
       name:
         type: string
+      original_price_cents:
+        type: integer
       price_cents:
         type: integer
       stock:
@@ -245,14 +251,20 @@ definitions:
         type: string
       description:
         type: string
+      free_shipping:
+        type: boolean
       id:
         type: integer
       image_url:
         type: string
       is_active:
         type: boolean
+      location:
+        type: string
       name:
         type: string
+      original_price_cents:
+        type: integer
       owner:
         $ref: '#/definitions/internal_handler.ownerResponse'
       price_cents:
@@ -636,6 +648,18 @@ paths:
       summary: Convert the current cart into an order (payment integration pending)
       tags:
       - orders
+  /api/v1/dev/seed:
+    post:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Seed dev data — admin+seller users, categories, products (idempotent;
+        only mounted when ENV=development)
+      tags:
+      - dev
   /api/v1/me:
     get:
       produces:

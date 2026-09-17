@@ -1,5 +1,5 @@
 import { useSearchParams } from '@solidjs/router';
-import { ListFilter, PackageSearch, Star } from 'lucide-solid';
+import { ListFilter, PackageSearch } from 'lucide-solid';
 import { For, Show, createMemo, createSignal } from 'solid-js';
 import {
   Drawer,
@@ -22,20 +22,20 @@ import { Skeleton } from '~/components/ui/skeleton';
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field';
 import { EmptyState } from '~/components/empty-state';
 import { ProductCard } from '~/components/product-card';
-import { dummyCategories } from '~/lib/dummy-data';
+import { categoryIcon } from '~/lib/category-icons';
+import { useCategoriesQuery } from '~/queries/categories';
 import { useProductsQuery } from '~/queries/products';
 
 type SortOption = { value: string; label: string };
 
+// No 'newest' option: the backend already returns products newest-first by
+// default, so a second "newest" sort would be a no-op duplicate of
+// "relevant". No rating sort either — there's no review/rating system.
 const SORT_OPTIONS: SortOption[] = [
   { value: 'relevant', label: 'Paling Sesuai' },
-  { value: 'newest', label: 'Terbaru' },
   { value: 'price_asc', label: 'Harga Terendah' },
   { value: 'price_desc', label: 'Harga Tertinggi' },
-  { value: 'rating', label: 'Rating Tertinggi' },
 ];
-
-const RATING_OPTIONS = [4.5, 4, 3];
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,22 +48,20 @@ export default function Products() {
   );
   const [minPrice, setMinPrice] = createSignal('');
   const [maxPrice, setMaxPrice] = createSignal('');
-  const [minRating, setMinRating] = createSignal<number | undefined>(undefined);
   const [sort, setSort] = createSignal<SortOption>(SORT_OPTIONS[0]!);
   const [filterOpen, setFilterOpen] = createSignal(false);
 
   const query = createMemo(() => (toSingle(searchParams.q) ?? '').trim().toLowerCase());
 
-  const activeCategory = createMemo(() =>
-    dummyCategories.find((c) => c.id === categoryId()),
-  );
+  const categoriesQuery = useCategoriesQuery();
+  const categories = () => categoriesQuery.data ?? [];
+  const activeCategory = createMemo(() => categories().find((c) => c.id === categoryId()));
 
   const filters = createMemo(() => ({
     categoryId: categoryId(),
     q: query(),
     minPriceCents: minPrice() ? Number(minPrice()) * 100 : undefined,
     maxPriceCents: maxPrice() ? Number(maxPrice()) * 100 : undefined,
-    minRating: minRating(),
     sort: sort().value,
   }));
 
@@ -78,7 +76,6 @@ export default function Products() {
   function clearFilters() {
     setMinPrice('');
     setMaxPrice('');
-    setMinRating(undefined);
     selectCategory(undefined);
   }
 
@@ -98,21 +95,24 @@ export default function Products() {
           >
             Semua Kategori
           </button>
-          <For each={dummyCategories}>
-            {(category) => (
-              <button
-                type='button'
-                onClick={() => selectCategory(category.id)}
-                class='flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors'
-                classList={{
-                  'bg-accent text-accent-foreground font-medium': categoryId() === category.id,
-                  'text-muted-foreground hover:bg-accent/50': categoryId() !== category.id,
-                }}
-              >
-                <category.icon class='size-4' aria-hidden='true' />
-                {category.name}
-              </button>
-            )}
+          <For each={categories()}>
+            {(category) => {
+              const Icon = categoryIcon(category.slug);
+              return (
+                <button
+                  type='button'
+                  onClick={() => selectCategory(category.id)}
+                  class='flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors'
+                  classList={{
+                    'bg-accent text-accent-foreground font-medium': categoryId() === category.id,
+                    'text-muted-foreground hover:bg-accent/50': categoryId() !== category.id,
+                  }}
+                >
+                  <Icon class='size-4' aria-hidden='true' />
+                  {category.name}
+                </button>
+              );
+            }}
           </For>
         </div>
       </div>
@@ -139,28 +139,6 @@ export default function Products() {
               onInput={(e) => setMaxPrice(e.currentTarget.value)}
             />
           </TextField>
-        </div>
-      </div>
-
-      <div>
-        <p class='mb-3 text-sm font-semibold text-foreground'>Rating Minimum</p>
-        <div class='flex flex-col gap-1'>
-          <For each={RATING_OPTIONS}>
-            {(rating) => (
-              <button
-                type='button'
-                onClick={() => setMinRating(minRating() === rating ? undefined : rating)}
-                class='flex items-center gap-1 rounded-md px-2 py-1.5 text-left text-sm transition-colors'
-                classList={{
-                  'bg-accent text-accent-foreground font-medium': minRating() === rating,
-                  'text-muted-foreground hover:bg-accent/50': minRating() !== rating,
-                }}
-              >
-                <Star class='size-3.5 fill-amber-400 text-amber-400' aria-hidden='true' />
-                {rating.toFixed(1)}+
-              </button>
-            )}
-          </For>
         </div>
       </div>
 

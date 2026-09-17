@@ -18,15 +18,18 @@
  * FINISH: unreviewed and undocumented is unfinished; this build ends with
  *   the finish review, the verdict, DESIGN.md, and every shipping raster
  *   carrying its provenance. (Reviewed here via direct screenshot + manual
- *   check, not the full subagent finish-reviewer — disclosed simplification
- *   for a fast, explicitly-dummy-data pass; see chat summary.)
+ *   check, not the full subagent finish-reviewer — disclosed simplification.)
+ *   Since wired to the real GET /api/v1/products and /api/v1/categories.
  */
 import { A } from '@solidjs/router';
 import { ChevronRight, Sparkles, Zap } from 'lucide-solid';
-import { For, createMemo, createSignal, onCleanup } from 'solid-js';
+import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Badge } from '~/components/ui/badge';
 import { ProductCard } from '~/components/product-card';
-import { dummyCategories, dummyProducts } from '~/lib/dummy-data';
+import { Skeleton } from '~/components/ui/skeleton';
+import { categoryIcon } from '~/lib/category-icons';
+import { useCategoriesQuery } from '~/queries/categories';
+import { useProductsQuery } from '~/queries/products';
 
 const HERO_SLIDES = [
   {
@@ -128,7 +131,13 @@ function SidePromo(props: { title: string; subtitle: string; tone: string }) {
 
 export default function Home() {
   const countdown = useFlashSaleCountdown();
-  const flashSaleProducts = createMemo(() => dummyProducts.filter((p) => p.originalPriceCents));
+
+  const categoriesQuery = useCategoriesQuery();
+  const categories = () => categoriesQuery.data ?? [];
+
+  const productsQuery = useProductsQuery(() => ({ limit: 20 }));
+  const products = () => productsQuery.data ?? [];
+  const flashSaleProducts = createMemo(() => products().filter((p) => p.original_price_cents));
 
   return (
     <div class='mx-auto flex max-w-7xl flex-col gap-10 px-4 py-6 sm:px-6'>
@@ -147,21 +156,33 @@ export default function Home() {
       <section>
         <h2 class='mb-4 text-lg font-bold text-foreground'>Kategori Pilihan</h2>
         <div class='grid grid-cols-4 gap-3 sm:grid-cols-8'>
-          <For each={dummyCategories}>
-            {(category) => (
-              <A
-                href={`/products?category_id=${category.id}`}
-                class='flex flex-col items-center gap-2 rounded-xl border border-border p-3 text-center transition-colors hover:border-primary hover:bg-accent'
-              >
-                <span class='flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground'>
-                  <category.icon class='size-5' aria-hidden='true' />
-                </span>
-                <span class='line-clamp-2 text-[11px] font-medium leading-tight text-foreground'>
-                  {category.name}
-                </span>
-              </A>
-            )}
-          </For>
+          <Show
+            when={!categoriesQuery.isLoading}
+            fallback={
+              <For each={Array(8).fill(0)}>
+                {() => <Skeleton class='h-24 w-full rounded-xl' />}
+              </For>
+            }
+          >
+            <For each={categories()}>
+              {(category) => {
+                const Icon = categoryIcon(category.slug);
+                return (
+                  <A
+                    href={`/products?category_id=${category.id}`}
+                    class='flex flex-col items-center gap-2 rounded-xl border border-border p-3 text-center transition-colors hover:border-primary hover:bg-accent'
+                  >
+                    <span class='flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground'>
+                      <Icon class='size-5' aria-hidden='true' />
+                    </span>
+                    <span class='line-clamp-2 text-[11px] font-medium leading-tight text-foreground'>
+                      {category.name}
+                    </span>
+                  </A>
+                );
+              }}
+            </For>
+          </Show>
         </div>
       </section>
 
@@ -182,15 +203,26 @@ export default function Home() {
           </A>
         </div>
 
-        <div class='scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:px-0 lg:grid-cols-6'>
-          <For each={flashSaleProducts()}>
-            {(product) => (
-              <div class='w-40 shrink-0 sm:w-auto'>
-                <ProductCard product={product} />
-              </div>
-            )}
-          </For>
-        </div>
+        <Show
+          when={!productsQuery.isLoading}
+          fallback={
+            <div class='grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6'>
+              <For each={Array(6).fill(0)}>
+                {() => <Skeleton class='aspect-[3/4] w-full rounded-xl' />}
+              </For>
+            </div>
+          }
+        >
+          <div class='scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:px-0 lg:grid-cols-6'>
+            <For each={flashSaleProducts()}>
+              {(product) => (
+                <div class='w-40 shrink-0 sm:w-auto'>
+                  <ProductCard product={product} />
+                </div>
+              )}
+            </For>
+          </div>
+        </Show>
       </section>
 
       <section>
@@ -199,9 +231,20 @@ export default function Home() {
           <h2 class='text-lg font-bold text-foreground'>Rekomendasi Untukmu</h2>
         </div>
 
-        <div class='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
-          <For each={dummyProducts}>{(product) => <ProductCard product={product} />}</For>
-        </div>
+        <Show
+          when={!productsQuery.isLoading}
+          fallback={
+            <div class='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
+              <For each={Array(10).fill(0)}>
+                {() => <Skeleton class='aspect-[3/4] w-full rounded-xl' />}
+              </For>
+            </div>
+          }
+        >
+          <div class='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'>
+            <For each={products()}>{(product) => <ProductCard product={product} />}</For>
+          </div>
+        </Show>
       </section>
     </div>
   );

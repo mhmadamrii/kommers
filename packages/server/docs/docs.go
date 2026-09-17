@@ -529,6 +529,23 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/dev/seed": {
+            "post": {
+                "tags": [
+                    "dev"
+                ],
+                "summary": "Seed dev data — admin+seller users, categories, products (idempotent; only mounted when ENV=development)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/me": {
             "get": {
                 "security": [
@@ -1636,14 +1653,23 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "free_shipping": {
+                    "type": "boolean"
+                },
                 "image_url": {
                     "type": "string"
                 },
                 "is_active": {
                     "type": "boolean"
                 },
+                "location": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
+                },
+                "original_price_cents": {
+                    "type": "integer"
                 },
                 "price_cents": {
                     "type": "integer"
@@ -1666,6 +1692,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "free_shipping": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -1675,8 +1704,14 @@ const docTemplate = `{
                 "is_active": {
                     "type": "boolean"
                 },
+                "location": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
+                },
+                "original_price_cents": {
+                    "type": "integer"
                 },
                 "owner": {
                     "$ref": "#/definitions/internal_handler.ownerResponse"

@@ -1,11 +1,13 @@
 import { A, useNavigate } from '@solidjs/router';
 import { ChevronDown, LogOut, MapPin, Search, ShoppingCart, Store, User } from 'lucide-solid';
-import { For, Show } from 'solid-js';
+import { For, Show, createSignal } from 'solid-js';
 import { toast } from 'somoto';
 import { Button } from '~/components/ui/button';
 import { LoginDialog } from '~/components/login-dialog';
+import { Skeleton } from '~/components/ui/skeleton';
 import { TextField, TextFieldInput } from '~/components/ui/text-field';
-import { dummyCategories } from '~/lib/dummy-data';
+import { categoryIcon } from '~/lib/category-icons';
+import { useCategoriesQuery } from '~/queries/categories';
 import { useLogoutMutation, useMeQuery } from '~/queries/auth';
 
 import {
@@ -21,7 +23,10 @@ const CART_ITEM_COUNT = 3;
 export function Navbar() {
   const navigate = useNavigate();
   const meQuery = useMeQuery();
+  const categoriesQuery = useCategoriesQuery();
   const logout = useLogoutMutation();
+  const categories = () => categoriesQuery.data ?? [];
+  const [searchValue, setSearchValue] = createSignal('');
 
   function handleLogout() {
     logout.mutate(undefined, {
@@ -54,17 +59,17 @@ export function Navbar() {
           </DropdownMenuTrigger>
           <DropdownMenuPortal>
             <DropdownMenuContent class='w-56'>
-              <For each={dummyCategories}>
+              <For each={categories()}>
                 {(category) => (
                   <DropdownMenuItem
                     as={A}
                     href={`/products?category_id=${category.id}`}
                     class='gap-2'
                   >
-                    <category.icon
-                      class='size-4 text-muted-foreground'
-                      aria-hidden='true'
-                    />
+                    {(() => {
+                      const Icon = categoryIcon(category.slug);
+                      return <Icon class='size-4 text-muted-foreground' aria-hidden='true' />;
+                    })()}
                     {category.name}
                   </DropdownMenuItem>
                 )}
@@ -73,19 +78,30 @@ export function Navbar() {
           </DropdownMenuPortal>
         </DropdownMenu>
 
-        <TextField class='w-full max-w-3xl flex-1'>
-          <div class='relative'>
-            <Search
-              class='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
-              aria-hidden='true'
-            />
-            <TextFieldInput
-              type='search'
-              placeholder='Cari produk, brand, dan lainnya'
-              class='h-10 rounded-full pl-9'
-            />
-          </div>
-        </TextField>
+        <form
+          class='w-full max-w-3xl flex-1'
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = searchValue().trim();
+            navigate(value ? `/products?q=${encodeURIComponent(value)}` : '/products');
+          }}
+        >
+          <TextField class='w-full'>
+            <div class='relative'>
+              <Search
+                class='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
+                aria-hidden='true'
+              />
+              <TextFieldInput
+                type='search'
+                placeholder='Cari produk, brand, dan lainnya'
+                class='h-10 rounded-full pl-9'
+                value={searchValue()}
+                onInput={(e) => setSearchValue(e.currentTarget.value)}
+              />
+            </div>
+          </TextField>
+        </form>
 
         <div class='ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3'>
           <div class='hidden items-center gap-1 text-xs text-muted-foreground lg:flex'>
@@ -146,17 +162,29 @@ export function Navbar() {
       </div>
 
       <nav class='scrollbar-none flex gap-2 overflow-x-auto border-t border-border/60 px-4 py-2 sm:px-6'>
-        <For each={dummyCategories}>
-          {(category) => (
-            <A
-              href={`/products?category_id=${category.id}`}
-              class='inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary hover:bg-accent hover:text-accent-foreground'
-            >
-              <category.icon class='size-3.5' aria-hidden='true' />
-              {category.name}
-            </A>
-          )}
-        </For>
+        <Show
+          when={!categoriesQuery.isLoading}
+          fallback={
+            <For each={Array(6).fill(0)}>
+              {() => <Skeleton class='h-7 w-24 shrink-0 rounded-full' />}
+            </For>
+          }
+        >
+          <For each={categories()}>
+            {(category) => {
+              const Icon = categoryIcon(category.slug);
+              return (
+                <A
+                  href={`/products?category_id=${category.id}`}
+                  class='inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary hover:bg-accent hover:text-accent-foreground'
+                >
+                  <Icon class='size-3.5' aria-hidden='true' />
+                  {category.name}
+                </A>
+              );
+            }}
+          </For>
+        </Show>
       </nav>
     </header>
   );

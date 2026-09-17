@@ -106,6 +106,13 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher) *gi
 			orders.GET("", orderHandler.List)
 			orders.GET("/:id", orderHandler.GetByID)
 		}
+
+		// Dev-only: never mounted outside local development, so it doesn't
+		// exist as an attack surface (or a data-wipe risk) anywhere else.
+		if cfg.Env == "development" {
+			devHandler := handler.NewDevHandler(db)
+			v1.POST("/dev/seed", devHandler.Seed)
+		}
 	}
 
 	return r

@@ -1,51 +1,81 @@
 import { useQuery } from '@tanstack/solid-query';
 import type { Accessor } from 'solid-js';
-import { dummyProducts, type DummyProduct } from '~/lib/dummy-data';
+import { apiFetch } from '~/lib/api-client';
+
+export type ProductOwner = {
+  id: number;
+  email: string;
+  full_name: string;
+};
+
+// Matches GET /api/v1/products' productResponse exactly (packages/server
+// internal/handler/product.go) — snake_case, on purpose, so the shape is
+// obviously "this is the wire format" rather than a client convention.
+export type Product = {
+  id: number;
+  category_id: number;
+  owner: ProductOwner;
+  name: string;
+  slug: string;
+  description: string;
+  price_cents: number;
+  original_price_cents?: number;
+  stock: number;
+  image_url: string;
+  is_active: boolean;
+  location: string;
+  free_shipping: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export function discountPercent(product: Product): number | null {
+  if (!product.original_price_cents) return null;
+  return Math.round(
+    ((product.original_price_cents - product.price_cents) / product.original_price_cents) * 100,
+  );
+}
 
 export type ProductFilters = {
   categoryId?: number;
   q?: string;
   minPriceCents?: number;
   maxPriceCents?: number;
-  minRating?: number;
   sort?: string;
+  limit?: number;
 };
 
-function sortProducts(products: DummyProduct[], sort: string): DummyProduct[] {
+// Server supports category_id/q/page/limit. Price range and sort aren't
+// backend query params (yet), so they're applied client-side over the
+// fetched page — fine at this data size, revisit if pagination grows.
+function sortProducts(products: Product[], sort: string): Product[] {
   const sorted = [...products];
   switch (sort) {
-    case 'newest':
-      return sorted.reverse();
     case 'price_asc':
-      return sorted.sort((a, b) => a.priceCents - b.priceCents);
+      return sorted.sort((a, b) => a.price_cents - b.price_cents);
     case 'price_desc':
-      return sorted.sort((a, b) => b.priceCents - a.priceCents);
-    case 'rating':
-      return sorted.sort((a, b) => b.rating - a.rating);
+      return sorted.sort((a, b) => b.price_cents - a.price_cents);
     default:
       return sorted;
   }
 }
 
-// Stands in for `await fetch('/api/v1/products?...')`'s latency so the
-// loading state is real to develop against before the backend is wired up.
-function simulateNetworkDelay() {
-  return new Promise((resolve) => setTimeout(resolve, 250));
-}
+async function fetchProducts(filters: ProductFilters): Promise<Product[]> {
+  const params = new URLSearchParams();
+  if (filters.categoryId !== undefined) params.set('category_id', String(filters.categoryId));
+  if (filters.q) params.set('q', filters.q);
+  params.set('limit', String(filters.limit ?? 20));
 
-async function fetchProducts(filters: ProductFilters): Promise<DummyProduct[]> {
-  await simulateNetworkDelay();
+  let products = await apiFetch<Product[]>(`/api/v1/products?${params.toString()}`);
 
-  const result = dummyProducts.filter((product) => {
-    if (filters.categoryId !== undefined && product.categoryId !== filters.categoryId) return false;
-    if (filters.q && !product.name.toLowerCase().includes(filters.q.toLowerCase())) return false;
-    if (filters.minPriceCents !== undefined && product.priceCents < filters.minPriceCents) return false;
-    if (filters.maxPriceCents !== undefined && product.priceCents > filters.maxPriceCents) return false;
-    if (filters.minRating !== undefined && product.rating < filters.minRating) return false;
-    return true;
-  });
+  if (filters.minPriceCents !== undefined) {
+    products = products.filter((p) => p.price_cents >= filters.minPriceCents!);
+  }
+  if (filters.maxPriceCents !== undefined) {
+    products = products.filter((p) => p.price_cents <= filters.maxPriceCents!);
+  }
 
-  return sortProducts(result, filters.sort ?? 'relevant');
+  return sortProducts(products, filters.sort ?? 'relevant');
 }
 
 export function useProductsQuery(filters: Accessor<ProductFilters>) {

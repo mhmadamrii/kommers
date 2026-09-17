@@ -1,5 +1,5 @@
 import { A } from '@solidjs/router';
-import { createSignal } from 'solid-js';
+import { type JSX, createSignal } from 'solid-js';
 import { Button } from '~/components/ui/button';
 
 import {
@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog';
 
-export function LoginDialog() {
+export function LoginDialog(props: { trigger?: JSX.Element }) {
   const [open, setOpen] = createSignal(false);
 
   function handleSubmit(e: SubmitEvent) {
@@ -32,14 +32,16 @@ export function LoginDialog() {
 
   return (
     <Dialog open={open()} onOpenChange={setOpen}>
-      <DialogTrigger
-        as={Button}
-        variant='outline'
-        size='sm'
-        class='hidden sm:inline-flex'
-      >
-        Masuk
-      </DialogTrigger>
+      {props.trigger ?? (
+        <DialogTrigger
+          as={Button}
+          variant='outline'
+          size='sm'
+          class='hidden sm:inline-flex'
+        >
+          Masuk
+        </DialogTrigger>
+      )}
       <DialogPortal>
         <DialogContent>
           <DialogHeader>

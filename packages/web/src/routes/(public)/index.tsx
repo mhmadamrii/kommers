@@ -22,7 +22,7 @@
  *   Since wired to the real GET /api/v1/products and /api/v1/categories.
  */
 import { A } from '@solidjs/router';
-import { ChevronRight, Sparkles, Zap } from 'lucide-solid';
+import { ChevronRight, Sparkles, Store, Wallet, Zap } from 'lucide-solid';
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js';
 import { Badge } from '~/components/ui/badge';
 import { ProductCard } from '~/components/product-card';
@@ -36,19 +36,36 @@ const HERO_SLIDES = [
     headline: 'Gajian Sale',
     subcopy: 'Diskon sampai 70% untuk ribuan produk pilihan',
     cta: 'Belanja Sekarang',
-    tone: 'from-primary via-primary to-emerald-700',
+    tone: 'from-primary via-primary/60 to-transparent',
+    image: '/payday_sale.jpeg',
   },
   {
     headline: 'Gratis Ongkir Se-Indonesia',
     subcopy: 'Belanja tanpa mikir ongkos kirim, min. belanja Rp0',
     cta: 'Lihat Promo',
-    tone: 'from-sky-600 via-sky-600 to-blue-800',
+    tone: 'from-sky-600 via-sky-600/60 to-transparent',
+    image: '/free_shiping.jpeg',
   },
   {
     headline: 'Seller Baru? Yuk Mulai Jualan',
     subcopy: 'Daftar jadi penjual gratis, tanpa komisi bulan pertama',
     cta: 'Jadi Seller',
-    tone: 'from-amber-500 via-orange-500 to-orange-600',
+    tone: 'from-amber-500 via-orange-500/60 to-transparent',
+    image: '/new_seller.jpeg',
+  },
+  {
+    headline: 'Cashback Berlimpah',
+    subcopy: 'Dapatkan cashback hingga 30% setiap transaksi',
+    cta: 'Klaim Cashback',
+    tone: 'from-pink-600 via-pink-600/60 to-transparent',
+    image: '/cashback.jpeg',
+  },
+  {
+    headline: 'Produk Lokal Pilihan',
+    subcopy: 'Dukung UMKM, belanja produk asli buatan Indonesia',
+    cta: 'Jelajahi',
+    tone: 'from-amber-800 via-amber-800/60 to-transparent',
+    image: '/local_product.jpeg',
   },
 ];
 
@@ -82,25 +99,31 @@ function HeroCarousel() {
       <For each={HERO_SLIDES}>
         {(slide, i) => (
           <div
-            class='absolute inset-0 flex flex-col justify-center gap-4 bg-gradient-to-br px-8 py-10 transition-opacity duration-700 sm:px-12'
+            class='absolute inset-0 bg-cover bg-center transition-opacity duration-700'
+            style={{ 'background-image': `url(${slide.image})` }}
             classList={{
-              [slide.tone]: true,
               'opacity-100': active() === i(),
               'opacity-0': active() !== i(),
             }}
             aria-hidden={active() !== i()}
           >
-            <h1 class='max-w-sm text-3xl font-extrabold leading-tight text-white sm:text-4xl'>
-              {slide.headline}
-            </h1>
-            <p class='max-w-xs text-sm text-white/90 sm:text-base'>{slide.subcopy}</p>
-            <button
-              type='button'
-              class='inline-flex w-fit items-center gap-1 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-foreground transition-transform hover:scale-105'
-            >
-              {slide.cta}
-              <ChevronRight class='size-4' aria-hidden='true' />
-            </button>
+            <div
+              class={`absolute inset-0 bg-gradient-to-r ${slide.tone}`}
+              aria-hidden='true'
+            />
+            <div class='relative flex h-full flex-col justify-center gap-4 px-8 py-10 sm:px-12'>
+              <h1 class='max-w-sm text-3xl font-extrabold leading-tight text-white sm:text-4xl'>
+                {slide.headline}
+              </h1>
+              <p class='max-w-xs text-sm text-white/90 sm:text-base'>{slide.subcopy}</p>
+              <button
+                type='button'
+                class='inline-flex w-fit items-center gap-1 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-foreground transition-transform hover:scale-105'
+              >
+                {slide.cta}
+                <ChevronRight class='size-4' aria-hidden='true' />
+              </button>
+            </div>
           </div>
         )}
       </For>
@@ -122,11 +145,17 @@ function HeroCarousel() {
   );
 }
 
-function SidePromo(props: { title: string; subtitle: string; tone: string }) {
+function SidePromo(props: { title: string; subtitle: string; tone: string; icon: typeof Wallet }) {
   return (
-    <div class={`flex flex-1 flex-col justify-center gap-1 rounded-2xl bg-gradient-to-br px-5 py-4 ${props.tone}`}>
-      <p class='text-sm font-bold text-white'>{props.title}</p>
-      <p class='text-xs text-white/85'>{props.subtitle}</p>
+    <div
+      class={`relative flex flex-1 flex-col justify-center gap-1 overflow-hidden rounded-2xl bg-gradient-to-br px-5 py-4 ${props.tone}`}
+    >
+      <props.icon
+        class='absolute -right-3 top-1/2 size-20 -translate-y-1/2 text-white/20'
+        aria-hidden='true'
+      />
+      <p class='relative text-sm font-bold text-white'>{props.title}</p>
+      <p class='relative text-xs text-white/85'>{props.subtitle}</p>
     </div>
   );
 }
@@ -158,8 +187,18 @@ export default function Home() {
           </div>
         </div>
         <div class='flex flex-col gap-4 sm:col-span-1'>
-          <SidePromo title='Cashback 20%' subtitle='Bayar pakai kommers Pay' tone='from-violet-600 to-purple-700' />
-          <SidePromo title='Produk Lokal Pilihan' subtitle='Dukung UMKM Indonesia' tone='from-rose-500 to-pink-600' />
+          <SidePromo
+            title='Cashback 20%'
+            subtitle='Bayar pakai kommers Pay'
+            tone='from-violet-600 to-purple-700'
+            icon={Wallet}
+          />
+          <SidePromo
+            title='Produk Lokal Pilihan'
+            subtitle='Dukung UMKM Indonesia'
+            tone='from-rose-500 to-pink-600'
+            icon={Store}
+          />
         </div>
       </section>
 

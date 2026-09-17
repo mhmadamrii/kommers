@@ -1,9 +1,11 @@
 import { A, useNavigate } from '@solidjs/router';
-import { ChevronDown, LogOut, MapPin, Search, ShoppingCart, Store, User } from 'lucide-solid';
+import { ChevronDown, LogOut, MapPin, Search, Store, User } from 'lucide-solid';
 import { For, Show, createSignal } from 'solid-js';
 import { toast } from 'somoto';
 import { Button } from '~/components/ui/button';
+import { CartDrawer } from '~/components/cart-drawer';
 import { LoginDialog } from '~/components/login-dialog';
+import { SellerApplyDialog } from '~/components/seller-apply-dialog';
 import { Skeleton } from '~/components/ui/skeleton';
 import { TextField, TextFieldInput } from '~/components/ui/text-field';
 import { categoryIcon } from '~/lib/category-icons';
@@ -18,8 +20,6 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown';
 
-const CART_ITEM_COUNT = 3;
-
 export function Navbar() {
   const navigate = useNavigate();
   const meQuery = useMeQuery();
@@ -27,6 +27,7 @@ export function Navbar() {
   const logout = useLogoutMutation();
   const categories = () => categoriesQuery.data ?? [];
   const [searchValue, setSearchValue] = createSignal('');
+  const [sellerDialogOpen, setSellerDialogOpen] = createSignal(false);
 
   function handleLogout() {
     logout.mutate(undefined, {
@@ -113,16 +114,7 @@ export function Navbar() {
           <div class='hidden h-6 w-px bg-border lg:block' aria-hidden='true' />
 
           <Show when={meQuery.data}>
-            <A
-              href='/cart'
-              class='relative inline-flex size-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent hover:text-accent-foreground'
-              aria-label={`Keranjang, ${CART_ITEM_COUNT} item`}
-            >
-              <ShoppingCart class='size-5' aria-hidden='true' />
-              <span class='absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-white'>
-                {CART_ITEM_COUNT}
-              </span>
-            </A>
+            <CartDrawer />
           </Show>
 
           <Show
@@ -149,6 +141,21 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuContent class='w-48'>
+                    <Show when={user().role !== 'admin'}>
+                      <DropdownMenuItem
+                        class='gap-2'
+                        onSelect={() => {
+                          if (user().role === 'customer') {
+                            setSellerDialogOpen(true);
+                          } else {
+                            navigate('/seller');
+                          }
+                        }}
+                      >
+                        <Store class='size-4' aria-hidden='true' />
+                        {user().role === 'customer' ? 'Jadi Penjual' : 'Dashboard Seller'}
+                      </DropdownMenuItem>
+                    </Show>
                     <DropdownMenuItem onSelect={handleLogout} class='gap-2 text-destructive'>
                       <LogOut class='size-4' aria-hidden='true' />
                       Keluar
@@ -160,6 +167,8 @@ export function Navbar() {
           </Show>
         </div>
       </div>
+
+      <SellerApplyDialog open={sellerDialogOpen()} onOpenChange={setSellerDialogOpen} />
 
       <nav class='scrollbar-none flex gap-2 overflow-x-auto border-t border-border/60 px-4 py-2 sm:px-6'>
         <Show

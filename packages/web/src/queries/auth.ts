@@ -55,6 +55,18 @@ export function useRegisterMutation() {
   }));
 }
 
+export function useApplySellerMutation() {
+  const queryClient = useQueryClient();
+  return useMutation(() => ({
+    mutationFn: () =>
+      apiFetch<AuthUser>('/api/v1/sellers/apply', {
+        method: 'POST',
+        body: JSON.stringify({ accept_terms: true }),
+      }),
+    onSuccess: (user) => queryClient.setQueryData(ME_QUERY_KEY, user),
+  }));
+}
+
 export function useLogoutMutation() {
   const queryClient = useQueryClient();
   return useMutation(() => ({

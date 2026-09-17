@@ -1,5 +1,7 @@
 # kommers
 
+![kommers thumbnail](packages/web/public/thumbnail.png)
+
 E-commerce backend + storefront built as a portfolio project. Go/Gin API with JWT auth, GORM/Postgres, and role-based product/seller/order flows, paired with a SolidStart + Tailwind frontend — all sitting behind Caddy and (eventually) Cloudflare.
 
 ## Stack

@@ -1,5 +1,6 @@
 import { A } from '@solidjs/router';
 import { type JSX, createSignal } from 'solid-js';
+import { toast } from 'somoto';
 import { Button } from '~/components/ui/button';
 
 import {
@@ -17,13 +18,31 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog';
+import { ApiError } from '~/lib/api-client';
+import { useLoginMutation } from '~/queries/auth';
 
 export function LoginDialog(props: { trigger?: JSX.Element }) {
   const [open, setOpen] = createSignal(false);
+  const [email, setEmail] = createSignal('');
+  const [password, setPassword] = createSignal('');
+
+  const login = useLoginMutation();
 
   function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    // TODO: wire to POST /api/v1/auth/login once the backend is connected.
+    login.mutate(
+      { email: email(), password: password() },
+      {
+        onSuccess: (data) => {
+          toast.success(`Selamat datang kembali, ${data.user.full_name}!`);
+          setOpen(false);
+          setPassword('');
+        },
+        onError: (err) => {
+          toast.error(err instanceof ApiError ? err.message : 'Gagal masuk, coba lagi.');
+        },
+      },
+    );
   }
 
   function handleGoogleLogin() {
@@ -58,6 +77,8 @@ export function LoginDialog(props: { trigger?: JSX.Element }) {
                 type='email'
                 placeholder='nama@email.com'
                 autocomplete='email'
+                value={email()}
+                onInput={(e) => setEmail(e.currentTarget.value)}
               />
             </TextField>
 
@@ -67,11 +88,13 @@ export function LoginDialog(props: { trigger?: JSX.Element }) {
                 type='password'
                 placeholder='••••••••'
                 autocomplete='current-password'
+                value={password()}
+                onInput={(e) => setPassword(e.currentTarget.value)}
               />
             </TextField>
 
-            <Button type='submit' class='w-full'>
-              Masuk
+            <Button type='submit' class='w-full' disabled={login.isPending}>
+              {login.isPending ? 'Memproses...' : 'Masuk'}
             </Button>
           </form>
 

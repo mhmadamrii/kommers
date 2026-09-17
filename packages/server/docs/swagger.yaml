@@ -342,6 +342,14 @@ paths:
       summary: Authenticate and receive a JWT
       tags:
       - auth
+  /api/v1/auth/logout:
+    post:
+      responses:
+        "204":
+          description: No Content
+      summary: Clear the auth cookie
+      tags:
+      - auth
   /api/v1/auth/register:
     post:
       consumes:

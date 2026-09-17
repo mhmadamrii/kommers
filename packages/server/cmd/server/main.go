@@ -44,7 +44,7 @@ func main() {
 		eventPublisher = publisher
 	}
 
-	r := router.New(db, cfg.JWTSecret, cfg.JWTExpiry, eventPublisher)
+	r := router.New(db, cfg, eventPublisher)
 
 	slog.Info("server starting", "port", cfg.Port, "env", cfg.Env)
 	if err := r.Run(":" + cfg.Port); err != nil {

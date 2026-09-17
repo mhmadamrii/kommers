@@ -66,6 +66,19 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Clear the auth cookie",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/register": {
             "post": {
                 "consumes": [

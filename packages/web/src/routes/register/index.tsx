@@ -18,15 +18,18 @@
  *   this project's CLAUDE.md); no live-brower/finish-reviewer pass this
  *   round — disclosed simplification, same as the homepage build.
  */
-import { A } from '@solidjs/router';
+import { A, useNavigate } from '@solidjs/router';
 import { CircleCheck, Search, Store, Zap } from 'lucide-solid';
 import { Motion } from 'solid-motionone';
 import { createMemo, createSignal } from 'solid-js';
+import { toast } from 'somoto';
 import { Button } from '~/components/ui/button';
 import { Checkbox, CheckboxControl, CheckboxLabel } from '~/components/ui/checkbox';
 import { DialogTrigger } from '~/components/ui/dialog';
 import { LoginDialog } from '~/components/login-dialog';
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field';
+import { ApiError } from '~/lib/api-client';
+import { useRegisterMutation } from '~/queries/auth';
 
 const BANNER_POINTS = [
   { icon: Search, label: 'Cari & filter produk secepat kilat' },
@@ -85,6 +88,7 @@ function BannerPanel() {
 }
 
 export default function Register() {
+  const navigate = useNavigate();
   const [fullName, setFullName] = createSignal('');
   const [email, setEmail] = createSignal('');
   const [password, setPassword] = createSignal('');
@@ -94,9 +98,22 @@ export default function Register() {
     () => fullName().trim() !== '' && email().trim() !== '' && password() !== '' && acceptedTerms(),
   );
 
+  const register = useRegisterMutation();
+
   function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    // TODO: wire to POST /api/v1/auth/register once the backend is connected.
+    register.mutate(
+      { full_name: fullName(), email: email(), password: password() },
+      {
+        onSuccess: (data) => {
+          toast.success(`Selamat datang, ${data.user.full_name}!`);
+          navigate('/');
+        },
+        onError: (err) => {
+          toast.error(err instanceof ApiError ? err.message : 'Gagal mendaftar, coba lagi.');
+        },
+      },
+    );
   }
 
   function handleGoogleRegister() {
@@ -161,8 +178,8 @@ export default function Register() {
               </CheckboxLabel>
             </Checkbox>
 
-            <Button type='submit' class='w-full' disabled={!canSubmit()}>
-              Daftar
+            <Button type='submit' class='w-full' disabled={!canSubmit() || register.isPending}>
+              {register.isPending ? 'Memproses...' : 'Daftar'}
             </Button>
           </form>
 

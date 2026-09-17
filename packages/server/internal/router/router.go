@@ -1,27 +1,29 @@
 package router
 
 import (
-	"time"
-
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 
+	"github.com/mhmadamrii/kommers/server/internal/config"
 	"github.com/mhmadamrii/kommers/server/internal/handler"
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
 )
 
-func New(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration, events handler.OrderEventPublisher) *gin.Engine {
+func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher) *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Recovery(), middleware.Logger())
+	r.Use(gin.Recovery(), middleware.Logger(), middleware.CORS(cfg.CORSAllowedOrigins))
 
 	r.GET("/healthz", handler.Healthz)
 	r.GET("/readyz", handler.Readyz)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	authHandler := handler.NewAuthHandler(db, jwtSecret, jwtExpiry)
+	jwtSecret := cfg.JWTSecret
+	jwtExpiry := cfg.JWTExpiry
+
+	authHandler := handler.NewAuthHandler(db, jwtSecret, jwtExpiry, cfg.CookieDomain, cfg.CookieSecure)
 	productHandler := handler.NewProductHandler(db)
 	sellerHandler := handler.NewSellerHandler(db)
 	categoryHandler := handler.NewCategoryHandler(db)
@@ -36,6 +38,7 @@ func New(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration, events handler.
 		{
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
+			auth.POST("/logout", authHandler.Logout)
 		}
 
 		products := v1.Group("/products")

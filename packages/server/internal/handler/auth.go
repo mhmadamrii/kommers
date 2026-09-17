@@ -9,18 +9,27 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
 	"github.com/mhmadamrii/kommers/server/internal/token"
 )
 
 type AuthHandler struct {
-	DB        *gorm.DB
-	JWTSecret string
-	JWTExpiry time.Duration
+	DB           *gorm.DB
+	JWTSecret    string
+	JWTExpiry    time.Duration
+	CookieDomain string
+	CookieSecure bool
 }
 
-func NewAuthHandler(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration) *AuthHandler {
-	return &AuthHandler{DB: db, JWTSecret: jwtSecret, JWTExpiry: jwtExpiry}
+func NewAuthHandler(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration, cookieDomain string, cookieSecure bool) *AuthHandler {
+	return &AuthHandler{
+		DB:           db,
+		JWTSecret:    jwtSecret,
+		JWTExpiry:    jwtExpiry,
+		CookieDomain: cookieDomain,
+		CookieSecure: cookieSecure,
+	}
 }
 
 type registerRequest struct {
@@ -125,12 +134,35 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	h.respondWithToken(c, http.StatusOK, user)
 }
 
+// Logout godoc
+//
+//	@Summary	Clear the auth cookie
+//	@Tags		auth
+//	@Success	204
+//	@Router		/api/v1/auth/logout [post]
+func (h *AuthHandler) Logout(c *gin.Context) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(middleware.CookieName, "", -1, "/", h.CookieDomain, h.CookieSecure, true)
+	c.Status(http.StatusNoContent)
+}
+
 func (h *AuthHandler) respondWithToken(c *gin.Context, status int, user model.User) {
 	tok, err := token.Generate(h.JWTSecret, h.JWTExpiry, user.ID, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
+
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(
+		middleware.CookieName,
+		tok,
+		int(h.JWTExpiry.Seconds()),
+		"/",
+		h.CookieDomain,
+		h.CookieSecure,
+		true, // httpOnly
+	)
 
 	c.JSON(status, authResponse{
 		Token: tok,

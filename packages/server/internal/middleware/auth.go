@@ -13,17 +13,22 @@ import (
 const (
 	CtxUserID = "userID"
 	CtxRole   = "role"
+
+	// CookieName is where the JWT lives for browser clients (httpOnly).
+	// API clients (curl, k6, mobile) keep using the Authorization header —
+	// checked first below, so both work.
+	CookieName = "kommers_token"
 )
 
 func RequireAuth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
-		if !strings.HasPrefix(header, "Bearer ") {
+		tokenStr := extractToken(c)
+		if tokenStr == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing bearer token"})
 			return
 		}
 
-		claims, err := token.Parse(secret, strings.TrimPrefix(header, "Bearer "))
+		claims, err := token.Parse(secret, tokenStr)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 			return
@@ -33,6 +38,16 @@ func RequireAuth(secret string) gin.HandlerFunc {
 		c.Set(CtxRole, claims.Role)
 		c.Next()
 	}
+}
+
+func extractToken(c *gin.Context) string {
+	if header := c.GetHeader("Authorization"); strings.HasPrefix(header, "Bearer ") {
+		return strings.TrimPrefix(header, "Bearer ")
+	}
+	if cookie, err := c.Cookie(CookieName); err == nil {
+		return cookie
+	}
+	return ""
 }
 
 func RequireRole(roles ...model.Role) gin.HandlerFunc {

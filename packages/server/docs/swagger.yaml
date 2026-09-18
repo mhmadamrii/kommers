@@ -329,6 +329,11 @@ definitions:
     type: object
   internal_handler.productResponse:
     properties:
+      average_rating:
+        description: |-
+          AverageRating/ReviewCount are computed from real Review rows — zero
+          when nobody has reviewed yet, never a placeholder or fabricated value.
+        type: number
       campaign_ends_at:
         type: string
       campaign_id:
@@ -362,6 +367,8 @@ definitions:
           PriceCents is the base price; EffectivePriceCents is what a buyer pays
           right now (equal to PriceCents when no campaign is live).
         type: integer
+      review_count:
+        type: integer
       slug:
         type: string
       stock:
@@ -382,6 +389,50 @@ definitions:
     - email
     - full_name
     - password
+    type: object
+  internal_handler.reviewEligibilityResponse:
+    properties:
+      already_reviewed:
+        type: boolean
+      can_review:
+        type: boolean
+    type: object
+  internal_handler.reviewImageResponse:
+    properties:
+      id:
+        type: integer
+      url:
+        type: string
+    type: object
+  internal_handler.reviewRequest:
+    properties:
+      comment:
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+    required:
+    - rating
+    type: object
+  internal_handler.reviewResponse:
+    properties:
+      comment:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/internal_handler.reviewImageResponse'
+        type: array
+      product_id:
+        type: integer
+      rating:
+        type: integer
+      reviewer_name:
+        type: string
     type: object
   internal_handler.updateCartItemRequest:
     properties:
@@ -1363,6 +1414,92 @@ paths:
       summary: Delete one of a product's images (admin, or the owning seller)
       tags:
       - products
+  /api/v1/products/{id}/reviews:
+    get:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.reviewResponse'
+            type: array
+      summary: List a product's reviews
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Review payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.reviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handler.reviewResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Review a product you've purchased (one review per buyer per product)
+      tags:
+      - reviews
+  /api/v1/products/{id}/reviews/eligibility:
+    get:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.reviewEligibilityResponse'
+      security:
+      - BearerAuth: []
+      summary: Whether the authenticated user can review a product (purchased it,
+        hasn't reviewed yet)
+      tags:
+      - reviews
   /api/v1/products/{slug}:
     get:
       parameters:
@@ -1387,6 +1524,58 @@ paths:
       summary: Get an active product by slug
       tags:
       - products
+  /api/v1/reviews/{id}/images:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Review ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'Image files (field name: images)'
+        in: formData
+        name: images
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handler.reviewResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload photos for your own review (uploadable any time after the review
+        exists)
+      tags:
+      - reviews
   /api/v1/sellers/apply:
     post:
       consumes:

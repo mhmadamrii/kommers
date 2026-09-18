@@ -23,5 +23,7 @@ func Migrate(db *gorm.DB) error {
 		&model.Order{},
 		&model.OrderItem{},
 		&model.Campaign{},
+		&model.Review{},
+		&model.ReviewImage{},
 	)
 }

@@ -74,8 +74,47 @@ type productResponse struct {
 	IsActive            bool                   `json:"is_active"`
 	Location            string                 `json:"location"`
 	FreeShipping        bool                   `json:"free_shipping"`
-	CreatedAt           time.Time              `json:"created_at"`
-	UpdatedAt           time.Time              `json:"updated_at"`
+	// AverageRating/ReviewCount are computed from real Review rows — zero
+	// when nobody has reviewed yet, never a placeholder or fabricated value.
+	AverageRating float64   `json:"average_rating"`
+	ReviewCount   int64     `json:"review_count"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+type ratingStat struct {
+	ProductID uint
+	Avg       float64
+	Count     int64
+}
+
+func productIDs(products []model.Product) []uint {
+	ids := make([]uint, len(products))
+	for i, p := range products {
+		ids[i] = p.ID
+	}
+	return ids
+}
+
+// ratingStatsFor bulk-computes review averages/counts for a set of product
+// IDs in one query — avoids an N+1 when building a product list response.
+func (h *ProductHandler) ratingStatsFor(productIDs []uint) map[uint]ratingStat {
+	stats := make(map[uint]ratingStat, len(productIDs))
+	if len(productIDs) == 0 {
+		return stats
+	}
+
+	var rows []ratingStat
+	h.DB.Table("reviews").
+		Select("product_id, AVG(rating) as avg, COUNT(*) as count").
+		Where("product_id IN ? AND deleted_at IS NULL", productIDs).
+		Group("product_id").
+		Scan(&rows)
+
+	for _, r := range rows {
+		stats[r.ProductID] = r
+	}
+	return stats
 }
 
 // newProductImageResponses sorts a product's images (primary first, then by
@@ -105,8 +144,9 @@ func (h *ProductHandler) newProductImageResponses(images []model.ProductImage) [
 	return res
 }
 
-func (h *ProductHandler) newProductResponse(p model.Product, campaigns []model.Campaign) productResponse {
+func (h *ProductHandler) newProductResponse(p model.Product, campaigns []model.Campaign, ratings map[uint]ratingStat) productResponse {
 	effectivePrice, freeShipping, campaign := pricing.Effective(campaigns, p)
+	rating := ratings[p.ID]
 
 	res := productResponse{
 		ID:         p.ID,
@@ -126,6 +166,8 @@ func (h *ProductHandler) newProductResponse(p model.Product, campaigns []model.C
 		IsActive:            p.IsActive,
 		Location:            p.Location,
 		FreeShipping:        freeShipping,
+		AverageRating:       rating.Avg,
+		ReviewCount:         rating.Count,
 		CreatedAt:           p.CreatedAt,
 		UpdatedAt:           p.UpdatedAt,
 	}
@@ -136,10 +178,10 @@ func (h *ProductHandler) newProductResponse(p model.Product, campaigns []model.C
 	return res
 }
 
-func (h *ProductHandler) newProductListResponse(products []model.Product, campaigns []model.Campaign) []productResponse {
+func (h *ProductHandler) newProductListResponse(products []model.Product, campaigns []model.Campaign, ratings map[uint]ratingStat) []productResponse {
 	res := make([]productResponse, len(products))
 	for i, p := range products {
-		res[i] = h.newProductResponse(p, campaigns)
+		res[i] = h.newProductResponse(p, campaigns, ratings)
 	}
 	return res
 }
@@ -209,7 +251,9 @@ func (h *ProductHandler) List(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, h.newProductListResponse(products, campaigns))
+	ratings := h.ratingStatsFor(productIDs(products))
+
+	c.JSON(http.StatusOK, h.newProductListResponse(products, campaigns, ratings))
 }
 
 // GetBySlug godoc
@@ -234,7 +278,9 @@ func (h *ProductHandler) GetBySlug(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, h.newProductResponse(product, campaigns))
+	ratings := h.ratingStatsFor([]uint{product.ID})
+
+	c.JSON(http.StatusOK, h.newProductResponse(product, campaigns, ratings))
 }
 
 // ListMine godoc
@@ -263,7 +309,9 @@ func (h *ProductHandler) ListMine(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, h.newProductListResponse(products, campaigns))
+	ratings := h.ratingStatsFor(productIDs(products))
+
+	c.JSON(http.StatusOK, h.newProductListResponse(products, campaigns, ratings))
 }
 
 // Create godoc
@@ -331,7 +379,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, h.newProductResponse(product, campaigns))
+	c.JSON(http.StatusCreated, h.newProductResponse(product, campaigns, h.ratingStatsFor([]uint{product.ID})))
 }
 
 // Update godoc
@@ -407,7 +455,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, h.newProductResponse(product, campaigns))
+	c.JSON(http.StatusOK, h.newProductResponse(product, campaigns, h.ratingStatsFor([]uint{product.ID})))
 }
 
 // Delete godoc
@@ -540,7 +588,7 @@ func (h *ProductHandler) UploadImages(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, h.newProductResponse(product, campaigns))
+	c.JSON(http.StatusCreated, h.newProductResponse(product, campaigns, h.ratingStatsFor([]uint{product.ID})))
 }
 
 // DeleteImage godoc

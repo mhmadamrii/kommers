@@ -33,6 +33,7 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 	addressHandler := handler.NewAddressHandler(db)
 	orderHandler := handler.NewOrderHandler(db, events)
 	campaignHandler := handler.NewCampaignHandler(db)
+	reviewHandler := handler.NewReviewHandler(db, storageClient, cfg.S3PublicURL, cfg.S3Bucket)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -57,6 +58,32 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 				admin.POST("/:id/images", productHandler.UploadImages)
 				admin.DELETE("/:id/images/:image_id", productHandler.DeleteImage)
 			}
+
+			// Gin's router trees are per-HTTP-method, and each panics if two
+			// routes at the same path position use different wildcard names.
+			// The GET tree already named it :slug (GetBySlug above); the POST
+			// tree already named it :id (the image upload route below) — so
+			// the two review sub-routers below deliberately use different
+			// param names for what is, to any caller, the identical URL.
+			products.GET("/:slug/reviews", reviewHandler.List)
+
+			reviewsGet := products.Group("/:slug/reviews")
+			reviewsGet.Use(middleware.RequireAuth(jwtSecret))
+			{
+				reviewsGet.GET("/eligibility", reviewHandler.Eligibility)
+			}
+
+			reviewsPost := products.Group("/:id/reviews")
+			reviewsPost.Use(middleware.RequireAuth(jwtSecret))
+			{
+				reviewsPost.POST("", reviewHandler.Create)
+			}
+		}
+
+		reviews := v1.Group("/reviews")
+		reviews.Use(middleware.RequireAuth(jwtSecret))
+		{
+			reviews.POST("/:id/images", reviewHandler.UploadImages)
 		}
 
 		sellers := v1.Group("/sellers")

@@ -3,6 +3,7 @@ import { MapPin, Truck } from 'lucide-solid';
 import { Show } from 'solid-js';
 import { Badge } from '~/components/ui/badge';
 import { Card } from '~/components/ui/card';
+import { StarRating } from '~/components/star-rating';
 import { formatPriceCents } from '~/lib/currency';
 import { discountPercent, type Product } from '~/queries/products';
 
@@ -49,6 +50,13 @@ export function ProductCard(props: { product: Product }) {
         <p class='-mt-1 truncate text-xs text-muted-foreground'>
           oleh {props.product.owner.full_name}
         </p>
+
+        <Show when={props.product.review_count > 0}>
+          <div class='-mt-0.5 flex items-center gap-1'>
+            <StarRating rating={props.product.average_rating} />
+            <span class='text-xs text-muted-foreground'>({props.product.review_count})</span>
+          </div>
+        </Show>
 
         <div class='flex items-baseline gap-1.5'>
           <span class='text-base font-semibold text-foreground'>

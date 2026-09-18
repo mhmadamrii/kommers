@@ -35,6 +35,9 @@ export type Product = {
   // Sorted primary-first, then by sort_order — images[0] is always the
   // one to show as the product's thumbnail.
   images: ProductImage[];
+  // Computed from real Review rows — 0/0 when nobody has reviewed yet.
+  average_rating: number;
+  review_count: number;
   is_active: boolean;
   location: string;
   free_shipping: boolean;

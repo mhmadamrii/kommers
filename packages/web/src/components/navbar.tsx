@@ -40,7 +40,7 @@ export function Navbar() {
 
   return (
     <header class='sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80'>
-      <div class='mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6'>
+      <div class='flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6'>
         <A
           href='/'
           class='flex shrink-0 items-center gap-1.5 text-xl font-extrabold tracking-tight text-primary'

@@ -1,4 +1,5 @@
 import { A, useParams } from '@solidjs/router';
+import { PackageX } from 'lucide-solid';
 import { createMemo, Show } from 'solid-js';
 import { toast } from 'somoto';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -6,13 +7,10 @@ import { EmptyState } from '~/components/empty-state';
 import { SellerProductForm } from '~/components/seller-product-form';
 import { SellerProductImages } from '~/components/seller-product-images';
 import { ApiError } from '~/lib/api-client';
-import { useRequireRole } from '~/queries/auth';
 import { useCategoriesQuery } from '~/queries/categories';
 import { useMyProductsQuery, useUpdateProductMutation } from '~/queries/products';
-import { PackageX } from 'lucide-solid';
 
 export default function EditSellerProduct() {
-  useRequireRole('seller', 'admin');
   const params = useParams();
   const categoriesQuery = useCategoriesQuery();
   const productsQuery = useMyProductsQuery();
@@ -23,7 +21,7 @@ export default function EditSellerProduct() {
   );
 
   return (
-    <div class='mx-auto flex max-w-lg flex-col gap-6 px-4 py-6 sm:px-6'>
+    <div class='flex flex-col gap-6'>
       <div>
         <A href='/seller/products' class='text-sm text-muted-foreground hover:underline'>
           &larr; Kembali ke Produk Saya
@@ -42,12 +40,7 @@ export default function EditSellerProduct() {
           }
         >
           {(product) => (
-            <>
-              <div class='flex flex-col gap-2'>
-                <h2 class='text-sm font-semibold text-foreground'>Gambar Produk</h2>
-                <SellerProductImages product={product()} />
-              </div>
-
+            <div class='grid max-w-4xl grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]'>
               <div class='flex flex-col gap-2'>
                 <h2 class='text-sm font-semibold text-foreground'>Detail Produk</h2>
                 <SellerProductForm
@@ -70,7 +63,12 @@ export default function EditSellerProduct() {
                   }}
                 />
               </div>
-            </>
+
+              <div class='flex flex-col gap-2'>
+                <h2 class='text-sm font-semibold text-foreground'>Gambar Produk</h2>
+                <SellerProductImages product={product()} />
+              </div>
+            </div>
           )}
         </Show>
       </Show>

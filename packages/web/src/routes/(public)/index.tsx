@@ -179,7 +179,7 @@ export default function Home() {
   const countdown = useCountdown(flashSaleEndsAt);
 
   return (
-    <div class='mx-auto flex max-w-7xl flex-col gap-10 px-4 py-6 sm:px-6'>
+    <div class='flex flex-col gap-10 px-4 py-6 sm:px-6'>
       <section class='grid grid-cols-1 gap-4 sm:grid-cols-3'>
         <div class='sm:col-span-2'>
           <div class='aspect-[16/9] sm:aspect-[21/9]'>
@@ -258,15 +258,15 @@ export default function Home() {
           <Show
             when={!productsQuery.isLoading}
             fallback={
-              <div class='grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6'>
-                <For each={Array(6).fill(0)}>
+              <div class='grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5'>
+                <For each={Array(5).fill(0)}>
                   {() => <Skeleton class='aspect-[3/4] w-full rounded-xl' />}
                 </For>
               </div>
             }
           >
-            <div class='scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:px-0 lg:grid-cols-6'>
-              <For each={flashSaleProducts()}>
+            <div class='scrollbar-none -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:px-0 lg:grid-cols-5'>
+              <For each={flashSaleProducts().slice(0, 5)}>
                 {(product) => (
                   <div class='w-40 shrink-0 sm:w-auto'>
                     <ProductCard product={product} />

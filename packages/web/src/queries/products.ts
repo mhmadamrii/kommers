@@ -109,6 +109,13 @@ export function useProductsQuery(filters: Accessor<ProductFilters>) {
   }));
 }
 
+export function useProductQuery(slug: Accessor<string>) {
+  return useQuery(() => ({
+    queryKey: ['products', 'slug', slug()],
+    queryFn: () => apiFetch<Product>(`/api/v1/products/${slug()}`),
+  }));
+}
+
 export const MY_PRODUCTS_QUERY_KEY = ['products', 'mine'] as const;
 
 export function useMyProductsQuery() {

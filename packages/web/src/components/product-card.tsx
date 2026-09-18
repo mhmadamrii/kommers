@@ -1,3 +1,4 @@
+import { A } from '@solidjs/router';
 import { MapPin, Truck } from 'lucide-solid';
 import { Show } from 'solid-js';
 import { Badge } from '~/components/ui/badge';
@@ -38,8 +39,15 @@ export function ProductCard(props: { product: Product }) {
       </div>
 
       <div class='flex flex-col gap-1.5 p-3'>
-        <p class='line-clamp-2 min-h-10 text-sm leading-tight text-foreground'>
+        <A
+          href={`/products/${props.product.slug}`}
+          class='line-clamp-2 min-h-10 text-sm font-bold leading-tight text-foreground hover:underline'
+        >
           {props.product.name}
+        </A>
+
+        <p class='-mt-1 truncate text-xs text-muted-foreground'>
+          oleh {props.product.owner.full_name}
         </p>
 
         <div class='flex items-baseline gap-1.5'>

@@ -10,6 +10,7 @@ import (
 	"github.com/mhmadamrii/kommers/server/internal/database"
 	"github.com/mhmadamrii/kommers/server/internal/handler"
 	"github.com/mhmadamrii/kommers/server/internal/router"
+	"github.com/mhmadamrii/kommers/server/internal/storage"
 )
 
 // @title						Kommers API
@@ -44,7 +45,15 @@ func main() {
 		eventPublisher = publisher
 	}
 
-	r := router.New(db, cfg, eventPublisher)
+	// Product image uploads are best-effort: unreachable object storage
+	// must never block server startup — the upload endpoint just 503s.
+	storageClient, err := storage.New(cfg)
+	if err != nil {
+		slog.Warn("object storage unavailable, product image upload disabled", "error", err)
+		storageClient = nil
+	}
+
+	r := router.New(db, cfg, eventPublisher, storageClient)
 
 	slog.Info("server starting", "port", cfg.Port, "env", cfg.Env)
 	if err := r.Run(":" + cfg.Port); err != nil {

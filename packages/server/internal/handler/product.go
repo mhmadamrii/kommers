@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -14,14 +15,21 @@ import (
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
 	"github.com/mhmadamrii/kommers/server/internal/pricing"
+	"github.com/mhmadamrii/kommers/server/internal/storage"
 )
 
 type ProductHandler struct {
-	DB *gorm.DB
+	DB      *gorm.DB
+	Storage *storage.Client
+	// PublicURLBase/Bucket build image URLs on read paths even when Storage
+	// is nil (object storage was unreachable at boot) — a down MinIO only
+	// breaks uploads, never breaks rendering already-uploaded image URLs.
+	PublicURLBase string
+	Bucket        string
 }
 
-func NewProductHandler(db *gorm.DB) *ProductHandler {
-	return &ProductHandler{DB: db}
+func NewProductHandler(db *gorm.DB, storageClient *storage.Client, publicURLBase, bucket string) *ProductHandler {
+	return &ProductHandler{DB: db, Storage: storageClient, PublicURLBase: publicURLBase, Bucket: bucket}
 }
 
 type productRequest struct {
@@ -30,7 +38,6 @@ type productRequest struct {
 	Description  string `json:"description"`
 	PriceCents   int64  `json:"price_cents" binding:"required,gt=0"`
 	Stock        int    `json:"stock" binding:"gte=0"`
-	ImageURL     string `json:"image_url"`
 	IsActive     *bool  `json:"is_active"`
 	Location     string `json:"location"`
 	FreeShipping bool   `json:"free_shipping"`
@@ -42,6 +49,13 @@ type ownerResponse struct {
 	FullName string `json:"full_name"`
 }
 
+type productImageResponse struct {
+	ID        uint   `json:"id"`
+	URL       string `json:"url"`
+	SortOrder int    `json:"sort_order"`
+	IsPrimary bool   `json:"is_primary"`
+}
+
 type productResponse struct {
 	ID          uint          `json:"id"`
 	CategoryID  uint          `json:"category_id"`
@@ -51,20 +65,47 @@ type productResponse struct {
 	Description string        `json:"description"`
 	// PriceCents is the base price; EffectivePriceCents is what a buyer pays
 	// right now (equal to PriceCents when no campaign is live).
-	PriceCents          int64      `json:"price_cents"`
-	EffectivePriceCents int64      `json:"effective_price_cents"`
-	CampaignID          *uint      `json:"campaign_id,omitempty"`
-	CampaignEndsAt      *time.Time `json:"campaign_ends_at,omitempty"`
-	Stock               int        `json:"stock"`
-	ImageURL            string     `json:"image_url"`
-	IsActive            bool       `json:"is_active"`
-	Location            string     `json:"location"`
-	FreeShipping        bool       `json:"free_shipping"`
-	CreatedAt           time.Time  `json:"created_at"`
-	UpdatedAt           time.Time  `json:"updated_at"`
+	PriceCents          int64                  `json:"price_cents"`
+	EffectivePriceCents int64                  `json:"effective_price_cents"`
+	CampaignID          *uint                  `json:"campaign_id,omitempty"`
+	CampaignEndsAt      *time.Time             `json:"campaign_ends_at,omitempty"`
+	Stock               int                    `json:"stock"`
+	Images              []productImageResponse `json:"images"`
+	IsActive            bool                   `json:"is_active"`
+	Location            string                 `json:"location"`
+	FreeShipping        bool                   `json:"free_shipping"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
 }
 
-func newProductResponse(p model.Product, campaigns []model.Campaign) productResponse {
+// newProductImageResponses sorts a product's images (primary first, then by
+// sort order/id) and resolves each object key to a browser-facing URL.
+func (h *ProductHandler) newProductImageResponses(images []model.ProductImage) []productImageResponse {
+	sorted := make([]model.ProductImage, len(images))
+	copy(sorted, images)
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i].IsPrimary != sorted[j].IsPrimary {
+			return sorted[i].IsPrimary
+		}
+		if sorted[i].SortOrder != sorted[j].SortOrder {
+			return sorted[i].SortOrder < sorted[j].SortOrder
+		}
+		return sorted[i].ID < sorted[j].ID
+	})
+
+	res := make([]productImageResponse, len(sorted))
+	for i, img := range sorted {
+		res[i] = productImageResponse{
+			ID:        img.ID,
+			URL:       storage.BuildPublicURL(h.PublicURLBase, h.Bucket, img.ObjectKey),
+			SortOrder: img.SortOrder,
+			IsPrimary: img.IsPrimary,
+		}
+	}
+	return res
+}
+
+func (h *ProductHandler) newProductResponse(p model.Product, campaigns []model.Campaign) productResponse {
 	effectivePrice, freeShipping, campaign := pricing.Effective(campaigns, p)
 
 	res := productResponse{
@@ -81,7 +122,7 @@ func newProductResponse(p model.Product, campaigns []model.Campaign) productResp
 		PriceCents:          p.PriceCents,
 		EffectivePriceCents: effectivePrice,
 		Stock:               p.Stock,
-		ImageURL:            p.ImageURL,
+		Images:              h.newProductImageResponses(p.Images),
 		IsActive:            p.IsActive,
 		Location:            p.Location,
 		FreeShipping:        freeShipping,
@@ -95,10 +136,10 @@ func newProductResponse(p model.Product, campaigns []model.Campaign) productResp
 	return res
 }
 
-func newProductListResponse(products []model.Product, campaigns []model.Campaign) []productResponse {
+func (h *ProductHandler) newProductListResponse(products []model.Product, campaigns []model.Campaign) []productResponse {
 	res := make([]productResponse, len(products))
 	for i, p := range products {
-		res[i] = newProductResponse(p, campaigns)
+		res[i] = h.newProductResponse(p, campaigns)
 	}
 	return res
 }
@@ -144,7 +185,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 		limit = 20
 	}
 
-	query := h.DB.Preload("Owner").Where("is_active = ?", true)
+	query := h.DB.Preload("Owner").Preload("Images").Where("is_active = ?", true)
 
 	if categoryID, err := strconv.Atoi(c.Query("category_id")); err == nil && categoryID > 0 {
 		query = query.Where("category_id = ?", categoryID)
@@ -168,7 +209,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, newProductListResponse(products, campaigns))
+	c.JSON(http.StatusOK, h.newProductListResponse(products, campaigns))
 }
 
 // GetBySlug godoc
@@ -182,7 +223,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 //	@Router		/api/v1/products/{slug} [get]
 func (h *ProductHandler) GetBySlug(c *gin.Context) {
 	var product model.Product
-	if err := h.DB.Preload("Owner").Where("slug = ? AND is_active = ?", c.Param("slug"), true).First(&product).Error; err != nil {
+	if err := h.DB.Preload("Owner").Preload("Images").Where("slug = ? AND is_active = ?", c.Param("slug"), true).First(&product).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 		return
 	}
@@ -193,7 +234,36 @@ func (h *ProductHandler) GetBySlug(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, newProductResponse(product, campaigns))
+	c.JSON(http.StatusOK, h.newProductResponse(product, campaigns))
+}
+
+// ListMine godoc
+//
+//	@Summary	List the authenticated seller's own products (active and inactive)
+//	@Tags		products
+//	@Security	BearerAuth
+//	@Produce	json
+//	@Success	200	{array}	productResponse
+//	@Router		/api/v1/me/products [get]
+func (h *ProductHandler) ListMine(c *gin.Context) {
+	userID := c.MustGet(middleware.CtxUserID).(uint)
+
+	var products []model.Product
+	if err := h.DB.Preload("Owner").Preload("Images").
+		Where("owner_id = ?", userID).
+		Order("id desc").
+		Find(&products).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	campaigns, err := pricing.LiveCampaigns(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, h.newProductListResponse(products, campaigns))
 }
 
 // Create godoc
@@ -245,7 +315,6 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		Description:  req.Description,
 		PriceCents:   req.PriceCents,
 		Stock:        req.Stock,
-		ImageURL:     req.ImageURL,
 		IsActive:     isActive,
 		Location:     req.Location,
 		FreeShipping: req.FreeShipping,
@@ -254,7 +323,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
-	h.DB.Preload("Owner").First(&product, product.ID)
+	h.DB.Preload("Owner").Preload("Images").First(&product, product.ID)
 
 	campaigns, err := pricing.LiveCampaigns(h.DB)
 	if err != nil {
@@ -262,7 +331,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, newProductResponse(product, campaigns))
+	c.JSON(http.StatusCreated, h.newProductResponse(product, campaigns))
 }
 
 // Update godoc
@@ -282,7 +351,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 //	@Router		/api/v1/products/{id} [put]
 func (h *ProductHandler) Update(c *gin.Context) {
 	var product model.Product
-	if err := h.DB.Preload("Owner").First(&product, c.Param("id")).Error; err != nil {
+	if err := h.DB.Preload("Owner").Preload("Images").First(&product, c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 		return
 	}
@@ -323,7 +392,6 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	product.Description = req.Description
 	product.PriceCents = req.PriceCents
 	product.Stock = req.Stock
-	product.ImageURL = req.ImageURL
 	product.IsActive = isActive
 	product.Location = req.Location
 	product.FreeShipping = req.FreeShipping
@@ -339,7 +407,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, newProductResponse(product, campaigns))
+	c.JSON(http.StatusOK, h.newProductResponse(product, campaigns))
 }
 
 // Delete godoc
@@ -366,6 +434,166 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 	if err := h.DB.Delete(&product).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+var allowedImageContentTypes = map[string]bool{
+	"image/jpeg": true,
+	"image/png":  true,
+	"image/webp": true,
+	"image/gif":  true,
+}
+
+const maxImageSizeBytes = 5 << 20 // 5MB per file
+
+// UploadImages godoc
+//
+//	@Summary	Upload one or more images for a product (admin, or the owning seller)
+//	@Tags		products
+//	@Security	BearerAuth
+//	@Accept		multipart/form-data
+//	@Produce	json
+//	@Param		id		path		int		true	"Product ID"
+//	@Param		images	formData	file	true	"Image files (field name: images)"
+//	@Success	201		{object}	productResponse
+//	@Failure	400		{object}	map[string]string
+//	@Failure	401		{object}	map[string]string
+//	@Failure	403		{object}	map[string]string
+//	@Failure	404		{object}	map[string]string
+//	@Failure	503		{object}	map[string]string
+//	@Router		/api/v1/products/{id}/images [post]
+func (h *ProductHandler) UploadImages(c *gin.Context) {
+	if h.Storage == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "image storage unavailable"})
+		return
+	}
+
+	var product model.Product
+	if err := h.DB.First(&product, c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+	if !h.authorizeOwner(c, product.OwnerID) {
+		return
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "expected multipart/form-data"})
+		return
+	}
+	files := form.File["images"]
+	if len(files) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no images provided (field name: images)"})
+		return
+	}
+
+	var existingCount int64
+	if err := h.DB.Model(&model.ProductImage{}).Where("product_id = ?", product.ID).Count(&existingCount).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	for i, fileHeader := range files {
+		if fileHeader.Size > maxImageSizeBytes {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fileHeader.Filename + " exceeds 5MB limit"})
+			return
+		}
+		contentType := fileHeader.Header.Get("Content-Type")
+		if !allowedImageContentTypes[contentType] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fileHeader.Filename + " must be jpeg, png, webp, or gif"})
+			return
+		}
+
+		file, err := fileHeader.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			return
+		}
+
+		objectKey, err := h.Storage.Upload(c.Request.Context(), fileHeader.Filename, contentType, fileHeader.Size, file)
+		file.Close()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			return
+		}
+
+		image := model.ProductImage{
+			ProductID: product.ID,
+			ObjectKey: objectKey,
+			SortOrder: int(existingCount) + i,
+			IsPrimary: existingCount == 0 && i == 0,
+		}
+		if err := h.DB.Create(&image).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			return
+		}
+	}
+
+	h.DB.Preload("Owner").Preload("Images").First(&product, product.ID)
+
+	campaigns, err := pricing.LiveCampaigns(h.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, h.newProductResponse(product, campaigns))
+}
+
+// DeleteImage godoc
+//
+//	@Summary	Delete one of a product's images (admin, or the owning seller)
+//	@Tags		products
+//	@Security	BearerAuth
+//	@Param		id			path	int	true	"Product ID"
+//	@Param		image_id	path	int	true	"Product image ID"
+//	@Success	204
+//	@Failure	401	{object}	map[string]string
+//	@Failure	403	{object}	map[string]string
+//	@Failure	404	{object}	map[string]string
+//	@Failure	503	{object}	map[string]string
+//	@Router		/api/v1/products/{id}/images/{image_id} [delete]
+func (h *ProductHandler) DeleteImage(c *gin.Context) {
+	if h.Storage == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "image storage unavailable"})
+		return
+	}
+
+	var product model.Product
+	if err := h.DB.First(&product, c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+	if !h.authorizeOwner(c, product.OwnerID) {
+		return
+	}
+
+	var image model.ProductImage
+	if err := h.DB.Where("product_id = ?", product.ID).First(&image, c.Param("image_id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "image not found"})
+		return
+	}
+
+	if err := h.Storage.Delete(c.Request.Context(), image.ObjectKey); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+	if err := h.DB.Delete(&image).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	// If the deleted image was primary, promote the next-oldest survivor so
+	// the product never ends up with zero primary images while any remain.
+	if image.IsPrimary {
+		var next model.ProductImage
+		if err := h.DB.Where("product_id = ?", product.ID).Order("sort_order asc, id asc").First(&next).Error; err == nil {
+			next.IsPrimary = true
+			h.DB.Save(&next)
+		}
 	}
 
 	c.Status(http.StatusNoContent)

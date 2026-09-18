@@ -1,4 +1,6 @@
+import { useNavigate } from '@solidjs/router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
+import { createEffect } from 'solid-js';
 import { ApiError, apiFetch } from '~/lib/api-client';
 
 export type Role = 'customer' | 'seller' | 'admin';
@@ -29,6 +31,21 @@ export function useMeQuery() {
     },
     retry: false,
   }));
+}
+
+// useRequireRole redirects home once the `me` query resolves to a user
+// without one of the allowed roles (including logged-out) — for gating
+// pages like seller product management with no server-side route guard.
+export function useRequireRole(...roles: Role[]) {
+  const navigate = useNavigate();
+  const meQuery = useMeQuery();
+  createEffect(() => {
+    if (meQuery.isLoading) return;
+    if (!meQuery.data || !roles.includes(meQuery.data.role)) {
+      navigate('/');
+    }
+  });
+  return meQuery;
 }
 
 export function useLoginMutation() {

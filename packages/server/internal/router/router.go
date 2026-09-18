@@ -10,9 +10,10 @@ import (
 	"github.com/mhmadamrii/kommers/server/internal/handler"
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
+	"github.com/mhmadamrii/kommers/server/internal/storage"
 )
 
-func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher) *gin.Engine {
+func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, storageClient *storage.Client) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery(), middleware.Logger(), middleware.CORS(cfg.CORSAllowedOrigins))
 
@@ -24,10 +25,10 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher) *gi
 	jwtExpiry := cfg.JWTExpiry
 
 	authHandler := handler.NewAuthHandler(db, jwtSecret, jwtExpiry, cfg.CookieDomain, cfg.CookieSecure)
-	productHandler := handler.NewProductHandler(db)
+	productHandler := handler.NewProductHandler(db, storageClient, cfg.S3PublicURL, cfg.S3Bucket)
 	sellerHandler := handler.NewSellerHandler(db)
 	categoryHandler := handler.NewCategoryHandler(db)
-	cartHandler := handler.NewCartHandler(db)
+	cartHandler := handler.NewCartHandler(db, cfg.S3PublicURL, cfg.S3Bucket)
 	profileHandler := handler.NewProfileHandler(db)
 	addressHandler := handler.NewAddressHandler(db)
 	orderHandler := handler.NewOrderHandler(db, events)
@@ -53,6 +54,8 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher) *gi
 				admin.POST("", productHandler.Create)
 				admin.PUT("/:id", productHandler.Update)
 				admin.DELETE("/:id", productHandler.Delete)
+				admin.POST("/:id/images", productHandler.UploadImages)
+				admin.DELETE("/:id/images/:image_id", productHandler.DeleteImage)
 			}
 		}
 
@@ -95,6 +98,8 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher) *gi
 				addresses.PUT("/:id", addressHandler.Update)
 				addresses.DELETE("/:id", addressHandler.Delete)
 			}
+
+			me.GET("/products", productHandler.ListMine)
 		}
 
 		checkout := v1.Group("/checkout")

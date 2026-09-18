@@ -20,6 +20,16 @@ export function ProductCard(props: { product: Product }) {
   return (
     <Card class='group gap-0 overflow-hidden p-0 transition-shadow hover:shadow-md'>
       <div class={`relative aspect-square w-full bg-gradient-to-br ${tone()}`}>
+        <Show when={props.product.images[0]}>
+          {(image) => (
+            <img
+              src={image().url}
+              alt={props.product.name}
+              loading='lazy'
+              class='absolute inset-0 size-full object-cover'
+            />
+          )}
+        </Show>
         <Show when={discount()}>
           <Badge variant='destructive' class='absolute left-2 top-2'>
             -{discount()}%

@@ -17,6 +17,15 @@ type Config struct {
 	CORSAllowedOrigins []string
 	CookieDomain       string
 	CookieSecure       bool
+	S3Endpoint         string
+	S3AccessKeyID      string
+	S3SecretAccessKey  string
+	S3Bucket           string
+	S3UseSSL           bool
+	// S3PublicURL is the scheme+host a browser reaches the bucket at — may
+	// differ from S3Endpoint (e.g. compose's internal "minio:9000" vs. the
+	// host-exposed "localhost:9000").
+	S3PublicURL string
 }
 
 func Load() Config {
@@ -41,6 +50,12 @@ func Load() Config {
 		CORSAllowedOrigins: splitCSV(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
 		CookieDomain:       getEnv("COOKIE_DOMAIN", ""),
 		CookieSecure:       cookieSecure,
+		S3Endpoint:         getEnv("S3_ENDPOINT", "localhost:9000"),
+		S3AccessKeyID:      getEnv("S3_ACCESS_KEY_ID", "kommers"),
+		S3SecretAccessKey:  getEnv("S3_SECRET_ACCESS_KEY", "kommers123"),
+		S3Bucket:           getEnv("S3_BUCKET", "kommers"),
+		S3UseSSL:           getEnv("S3_USE_SSL", "false") == "true",
+		S3PublicURL:        getEnv("S3_PUBLIC_URL", "http://localhost:9000"),
 	}
 }
 

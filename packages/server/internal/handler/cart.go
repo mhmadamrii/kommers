@@ -10,14 +10,35 @@ import (
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
 	"github.com/mhmadamrii/kommers/server/internal/pricing"
+	"github.com/mhmadamrii/kommers/server/internal/storage"
 )
 
 type CartHandler struct {
-	DB *gorm.DB
+	DB            *gorm.DB
+	PublicURLBase string
+	Bucket        string
 }
 
-func NewCartHandler(db *gorm.DB) *CartHandler {
-	return &CartHandler{DB: db}
+func NewCartHandler(db *gorm.DB, publicURLBase, bucket string) *CartHandler {
+	return &CartHandler{DB: db, PublicURLBase: publicURLBase, Bucket: bucket}
+}
+
+// primaryImageURL picks the product's primary image (falling back to the
+// first by sort order) — mirrors ProductHandler's ordering so the cart shows
+// the same thumbnail as the product listing.
+func (h *CartHandler) primaryImageURL(images []model.ProductImage) string {
+	if len(images) == 0 {
+		return ""
+	}
+	best := images[0]
+	for _, img := range images[1:] {
+		if img.IsPrimary && !best.IsPrimary {
+			best = img
+		} else if img.IsPrimary == best.IsPrimary && img.SortOrder < best.SortOrder {
+			best = img
+		}
+	}
+	return storage.BuildPublicURL(h.PublicURLBase, h.Bucket, best.ObjectKey)
 }
 
 type addCartItemRequest struct {
@@ -46,7 +67,7 @@ type cartResponse struct {
 	TotalCents int64              `json:"total_cents"`
 }
 
-func newCartResponse(cart model.Cart) cartResponse {
+func (h *CartHandler) newCartResponse(cart model.Cart) cartResponse {
 	items := make([]cartItemResponse, len(cart.Items))
 	var total int64
 	for i, item := range cart.Items {
@@ -57,7 +78,7 @@ func newCartResponse(cart model.Cart) cartResponse {
 			ProductID:     item.ProductID,
 			ProductName:   item.Product.Name,
 			ProductSlug:   item.Product.Slug,
-			ImageURL:      item.Product.ImageURL,
+			ImageURL:      h.primaryImageURL(item.Product.Images),
 			Quantity:      item.Quantity,
 			PriceCents:    item.PriceCents,
 			SubtotalCents: subtotal,
@@ -68,7 +89,7 @@ func newCartResponse(cart model.Cart) cartResponse {
 
 func (h *CartHandler) getOrCreateCart(userID uint) (*model.Cart, error) {
 	var cart model.Cart
-	err := h.DB.Preload("Items.Product").Where("user_id = ?", userID).First(&cart).Error
+	err := h.DB.Preload("Items.Product.Images").Where("user_id = ?", userID).First(&cart).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		cart = model.Cart{UserID: &userID}
 		if err := h.DB.Create(&cart).Error; err != nil {
@@ -100,7 +121,7 @@ func (h *CartHandler) Get(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, newCartResponse(*cart))
+	c.JSON(http.StatusOK, h.newCartResponse(*cart))
 }
 
 // AddItem godoc
@@ -186,7 +207,7 @@ func (h *CartHandler) AddItem(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, newCartResponse(*cart))
+	c.JSON(http.StatusOK, h.newCartResponse(*cart))
 }
 
 // UpdateItem godoc
@@ -250,7 +271,7 @@ func (h *CartHandler) UpdateItem(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, newCartResponse(*updatedCart))
+	c.JSON(http.StatusOK, h.newCartResponse(*updatedCart))
 }
 
 // RemoveItem godoc

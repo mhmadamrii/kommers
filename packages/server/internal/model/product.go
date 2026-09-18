@@ -13,11 +13,11 @@ type Product struct {
 	Description string   `gorm:"type:text"`
 	// PriceCents is the base price. Any discount is computed dynamically
 	// from an active Campaign (internal/pricing) — never stored here.
-	PriceCents int64  `gorm:"not null"`
-	Stock      int    `gorm:"not null;default:0"`
-	ImageURL   string `gorm:"size:512"`
-	IsActive   bool   `gorm:"not null;default:true"`
-	Location   string `gorm:"size:255"`
+	PriceCents int64          `gorm:"not null"`
+	Stock      int            `gorm:"not null;default:0"`
+	Images     []ProductImage `gorm:"foreignKey:ProductID"`
+	IsActive   bool           `gorm:"not null;default:true"`
+	Location   string         `gorm:"size:255"`
 	// FreeShipping is the seller's standing shipping rule. A live campaign's
 	// own FreeShipping flag can additionally grant it during the sale.
 	FreeShipping bool `gorm:"not null;default:false"`

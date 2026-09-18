@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/solid-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
 import type { Accessor } from 'solid-js';
 import { apiFetch } from '~/lib/api-client';
 
@@ -6,6 +6,13 @@ export type ProductOwner = {
   id: number;
   email: string;
   full_name: string;
+};
+
+export type ProductImage = {
+  id: number;
+  url: string;
+  sort_order: number;
+  is_primary: boolean;
 };
 
 // Matches GET /api/v1/products' productResponse exactly (packages/server
@@ -25,12 +32,25 @@ export type Product = {
   campaign_id?: number;
   campaign_ends_at?: string;
   stock: number;
-  image_url: string;
+  // Sorted primary-first, then by sort_order — images[0] is always the
+  // one to show as the product's thumbnail.
+  images: ProductImage[];
   is_active: boolean;
   location: string;
   free_shipping: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type ProductRequest = {
+  category_id: number;
+  name: string;
+  description?: string;
+  price_cents: number;
+  stock: number;
+  is_active?: boolean;
+  location?: string;
+  free_shipping?: boolean;
 };
 
 export function discountPercent(product: Product): number | null {
@@ -86,5 +106,62 @@ export function useProductsQuery(filters: Accessor<ProductFilters>) {
   return useQuery(() => ({
     queryKey: ['products', filters()],
     queryFn: () => fetchProducts(filters()),
+  }));
+}
+
+export const MY_PRODUCTS_QUERY_KEY = ['products', 'mine'] as const;
+
+export function useMyProductsQuery() {
+  return useQuery(() => ({
+    queryKey: MY_PRODUCTS_QUERY_KEY,
+    queryFn: () => apiFetch<Product[]>('/api/v1/me/products'),
+  }));
+}
+
+export function useCreateProductMutation() {
+  const queryClient = useQueryClient();
+  return useMutation(() => ({
+    mutationFn: (input: ProductRequest) =>
+      apiFetch<Product>('/api/v1/products', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: MY_PRODUCTS_QUERY_KEY }),
+  }));
+}
+
+export function useUpdateProductMutation() {
+  const queryClient = useQueryClient();
+  return useMutation(() => ({
+    mutationFn: ({ id, ...input }: ProductRequest & { id: number }) =>
+      apiFetch<Product>(`/api/v1/products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: MY_PRODUCTS_QUERY_KEY }),
+  }));
+}
+
+export function useUploadProductImagesMutation() {
+  const queryClient = useQueryClient();
+  return useMutation(() => ({
+    mutationFn: ({ productId, files }: { productId: number; files: File[] }) => {
+      const form = new FormData();
+      for (const file of files) form.append('images', file);
+      return apiFetch<Product>(`/api/v1/products/${productId}/images`, {
+        method: 'POST',
+        body: form,
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: MY_PRODUCTS_QUERY_KEY }),
+  }));
+}
+
+export function useDeleteProductImageMutation() {
+  const queryClient = useQueryClient();
+  return useMutation(() => ({
+    mutationFn: ({ productId, imageId }: { productId: number; imageId: number }) =>
+      apiFetch<void>(`/api/v1/products/${productId}/images/${imageId}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: MY_PRODUCTS_QUERY_KEY }),
   }));
 }

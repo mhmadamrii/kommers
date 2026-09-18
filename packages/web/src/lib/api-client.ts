@@ -16,7 +16,12 @@ export class ApiError extends Error {
 // packages/server CORS_ALLOWED_ORIGINS).
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
-  headers.set('Content-Type', 'application/json');
+  // FormData bodies (multipart uploads) need the browser to set its own
+  // Content-Type with a boundary — forcing application/json here would
+  // send the file parts as unparseable JSON.
+  if (!(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   // Browser fetch attaches the cookie automatically via credentials:'include'.
   // Server-side (SSR) fetch has no browser cookie jar to draw from — without

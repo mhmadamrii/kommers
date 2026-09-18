@@ -39,7 +39,7 @@ All routes are prefixed `/api/v1`. Health checks (`/healthz`, `/readyz`) and `/s
 | ---------- | ----------------------------------------------------------------------- | ------------------------------------ |
 | Auth       | `POST /auth/register`, `POST /auth/login`                              | public                               |
 | Products   | `GET /products` (filter `category_id`, search `q`), `GET /products/:slug` | public                               |
-|            | `POST/PUT/DELETE /products...`                                          | admin, or the owning seller           |
+|            | `POST/PUT/DELETE /products...`, `POST /products/:id/images`, `DELETE /products/:id/images/:image_id` | admin, or the owning seller |
 | Categories | `GET /categories`                                                       | public                               |
 |            | `POST /categories`                                                      | admin only                           |
 | Sellers    | `POST /sellers/apply` (accept terms → role flips to `seller`)          | any authenticated user               |
@@ -97,7 +97,6 @@ RabbitMQ management UI: `http://localhost:15672` (`kommers` / `kommers`).
 
 - **Cloudflare** — DNS + proxy in front of the VPS (Caddy stays as the origin's TLS terminator/reverse proxy; Cloudflare adds edge caching, DDoS protection, and hides the origin IP). Not something expressible in this repo — configured in the Cloudflare dashboard once there's a real domain/VPS.
 - **Firewall** (`ufw`/`nftables`) — host-level lockdown (only 80/443 open, SSH restricted) on the VPS itself once deployed. Not a repo concern.
-- **MinIO wiring** — no upload endpoint or Go S3 client yet; product images are currently just a plain `image_url` string field.
 
 ## Local development
 
@@ -127,9 +126,15 @@ docker compose up -d       # http://localhost (via Caddy)
 | `JWT_SECRET`        | `dev-secret-change-me` — **override in any non-local environment**    |
 | `JWT_EXPIRY_HOURS`  | `24`                                                                  |
 | `RABBITMQ_URL`      | `amqp://kommers:kommers@localhost:5672/` — optional, checkout skips event publishing if unreachable |
+| `S3_ENDPOINT`       | `localhost:9000` — MinIO/S3 endpoint the server dials (no scheme needed; `http://`/`https://` prefixes are stripped if present) |
+| `S3_ACCESS_KEY_ID`  | `kommers`                                                             |
+| `S3_SECRET_ACCESS_KEY` | `kommers123`                                                       |
+| `S3_BUCKET`         | `kommers` — created on boot if missing, with a public-read bucket policy |
+| `S3_USE_SSL`        | `false`                                                               |
+| `S3_PUBLIC_URL`     | `http://localhost:9000` — browser-facing scheme+host for image URLs; optional, image upload 503s if unreachable at boot |
 
 `cmd/notifier` (the RabbitMQ consumer) reads the same `RABBITMQ_URL` and runs as its own process: `go run ./cmd/notifier`.
 
 ## Status
 
-Auth, products, categories, seller onboarding, cart, profile/addresses, and checkout (cart → order, transactional stock decrement) are built and runtime-verified. The RabbitMQ producer/consumer (`order.created` → notifier) is built and compiles clean but **not yet runtime-verified against a live broker** — infra was written without spinning up podman/docker per instruction. Not yet built: payment integration (Stripe, deliberately deferred), product image upload (MinIO), admin UI (API-only for now).
+Auth, products, categories, seller onboarding, cart, profile/addresses, and checkout (cart → order, transactional stock decrement) are built and runtime-verified. Product image upload (`POST /products/:id/images`, multipart, backed by MinIO via `minio-go`) is built — a product now has a `ProductImage` gallery (`sort_order` + `is_primary`) instead of a single `image_url` field — but the frontend upload UI is not wired yet (backend-only so far). The RabbitMQ producer/consumer (`order.created` → notifier) is built and compiles clean but **not yet runtime-verified against a live broker** — infra was written without spinning up podman/docker per instruction. Not yet built: payment integration (Stripe, deliberately deferred), admin UI (API-only for now).

@@ -237,6 +237,29 @@ definitions:
     required:
     - address_id
     type: object
+  internal_handler.checkoutResponse:
+    properties:
+      address_id:
+        type: integer
+      checkout_url:
+        type: string
+      created_at:
+        type: string
+      currency:
+        type: string
+      id:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/internal_handler.orderItemResponse'
+        type: array
+      payment_status:
+        $ref: '#/definitions/github_com_mhmadamrii_kommers_server_internal_model.PaymentStatus'
+      status:
+        $ref: '#/definitions/github_com_mhmadamrii_kommers_server_internal_model.OrderStatus'
+      total_cents:
+        type: integer
+    type: object
   internal_handler.loginRequest:
     properties:
       email:
@@ -269,6 +292,8 @@ definitions:
       address_id:
         type: integer
       created_at:
+        type: string
+      currency:
         type: string
       id:
         type: integer
@@ -859,7 +884,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_handler.orderResponse'
+            $ref: '#/definitions/internal_handler.checkoutResponse'
         "400":
           description: Bad Request
           schema:
@@ -884,9 +909,22 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "502":
+          description: Bad Gateway
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       security:
       - BearerAuth: []
-      summary: Convert the current cart into an order (payment integration pending)
+      summary: Convert the current cart into an order and start a Stripe Checkout
+        Session
       tags:
       - orders
   /api/v1/dev/seed:
@@ -1414,14 +1452,38 @@ paths:
       summary: Delete one of a product's images (admin, or the owning seller)
       tags:
       - products
-  /api/v1/products/{id}/reviews:
+  /api/v1/products/{slug}:
     get:
       parameters:
-      - description: Product ID
+      - description: Product slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.productResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get an active product by slug
+      tags:
+      - products
+  /api/v1/products/{slug}/reviews:
+    get:
+      parameters:
+      - description: Product slug
+        in: path
+        name: slug
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1431,6 +1493,12 @@ paths:
             items:
               $ref: '#/definitions/internal_handler.reviewResponse'
             type: array
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: List a product's reviews
       tags:
       - reviews
@@ -1438,11 +1506,11 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Product ID
+      - description: Product slug
         in: path
-        name: id
+        name: slug
         required: true
-        type: integer
+        type: string
       - description: Review payload
         in: body
         name: request
@@ -1468,6 +1536,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "409":
           description: Conflict
           schema:
@@ -1479,28 +1553,7 @@ paths:
       summary: Review a product you've purchased (one review per buyer per product)
       tags:
       - reviews
-  /api/v1/products/{id}/reviews/eligibility:
-    get:
-      parameters:
-      - description: Product ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_handler.reviewEligibilityResponse'
-      security:
-      - BearerAuth: []
-      summary: Whether the authenticated user can review a product (purchased it,
-        hasn't reviewed yet)
-      tags:
-      - reviews
-  /api/v1/products/{slug}:
+  /api/v1/products/{slug}/reviews/eligibility:
     get:
       parameters:
       - description: Product slug
@@ -1514,16 +1567,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.productResponse'
+            $ref: '#/definitions/internal_handler.reviewEligibilityResponse'
         "404":
           description: Not Found
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Get an active product by slug
+      security:
+      - BearerAuth: []
+      summary: Whether the authenticated user can review a product (purchased it,
+        hasn't reviewed yet)
       tags:
-      - products
+      - reviews
   /api/v1/reviews/{id}/images:
     post:
       consumes:
@@ -1617,6 +1673,24 @@ paths:
       summary: Apply to become a seller
       tags:
       - sellers
+  /api/v1/webhooks/stripe:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Stripe webhook receiver (checkout.session.completed / checkout.session.expired)
+      tags:
+      - orders
   /healthz:
     get:
       produces:

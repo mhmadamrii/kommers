@@ -46,8 +46,11 @@ All routes are prefixed `/api/v1`. Health checks (`/healthz`, `/readyz`) and `/s
 | Cart       | `GET /cart`, `POST /cart/items`, `PUT/DELETE /cart/items/:id`          | authenticated user (own cart)        |
 | Profile    | `GET/PUT /me`                                                          | authenticated user                    |
 | Addresses  | `GET/POST /me/addresses`, `PUT/DELETE /me/addresses/:id`               | authenticated user (own addresses)    |
-| Checkout   | `POST /checkout` (cart → order, stock decremented transactionally)     | authenticated user                    |
+| Checkout   | `POST /checkout` (cart → order, stock decremented transactionally, starts a Stripe Checkout Session) | authenticated user |
 | Orders     | `GET /orders`, `GET /orders/:id`                                       | own orders, or any order if admin    |
+| Stripe webhook | `POST /webhooks/stripe` (`checkout.session.completed` → mark paid; `checkout.session.expired` → cancel order, restore stock) | public, verified via `Stripe-Signature` |
+| Reviews    | `GET /products/:slug/reviews`, `GET /products/:slug/reviews/eligibility` | public / authenticated user |
+|            | `POST /products/:slug/reviews`, `POST /reviews/:id/images`             | authenticated user who purchased the product |
 
 Roles: `customer` (default) → `seller` (self-serve via `/sellers/apply`) → `admin` (manual DB promotion only, no self-serve path).
 
@@ -132,9 +135,16 @@ docker compose up -d       # http://localhost (via Caddy)
 | `S3_BUCKET`         | `kommers` — created on boot if missing, with a public-read bucket policy |
 | `S3_USE_SSL`        | `false`                                                               |
 | `S3_PUBLIC_URL`     | `http://localhost:9000` — browser-facing scheme+host for image URLs; optional, image upload 503s if unreachable at boot |
+| `STRIPE_SECRET_KEY` | empty — checkout 503s if unset, never fails server boot                |
+| `STRIPE_WEBHOOK_SECRET` | empty — from `stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe --print-secret` for local dev |
+| `FRONTEND_URL`      | `http://localhost:3000` — base for the Checkout Session's success/cancel redirect URLs |
 
 `cmd/notifier` (the RabbitMQ consumer) reads the same `RABBITMQ_URL` and runs as its own process: `go run ./cmd/notifier`.
 
 ## Status
 
-Auth, products, categories, seller onboarding, cart, profile/addresses, and checkout (cart → order, transactional stock decrement) are built and runtime-verified. Product image upload (`POST /products/:id/images`, multipart, backed by MinIO via `minio-go`) is built — a product now has a `ProductImage` gallery (`sort_order` + `is_primary`) instead of a single `image_url` field — but the frontend upload UI is not wired yet (backend-only so far). The RabbitMQ producer/consumer (`order.created` → notifier) is built and compiles clean but **not yet runtime-verified against a live broker** — infra was written without spinning up podman/docker per instruction. Not yet built: payment integration (Stripe, deliberately deferred), admin UI (API-only for now).
+Auth, products, categories, seller onboarding, cart, profile/addresses, checkout, and buyer reviews are built and runtime-verified, frontend included. Product images (`ProductImage` gallery, `sort_order`/`is_primary`) and review photos both upload through the same MinIO-backed multipart flow, with matching upload UI on the seller product form and the review form respectively.
+
+Payment is real, not stubbed: checkout creates the order (stock decremented transactionally, same as before) and starts a Stripe Checkout Session (hosted redirect, not embedded Elements). `POST /webhooks/stripe` verifies the `Stripe-Signature` header and reconciles the order — `checkout.session.completed` marks it paid, `checkout.session.expired` cancels it and restores stock (and any campaign `stock_used`). Currency defaults to `idr`; if the connected Stripe account can't present it, checkout falls back to `usd` on that one attempt only (detected via the error message, not a hardcoded account allowlist) — the amount is reused as-is, so this is a currency-label fallback for demo purposes, not a real FX conversion. Both the paid and expired paths are runtime-verified against a live Stripe test-mode account via a real Checkout Session and hand-signed webhook events.
+
+The RabbitMQ producer/consumer (`order.created` → notifier) is built and compiles clean but **not yet runtime-verified against a live broker** — infra was written without spinning up podman/docker per instruction. Not yet built: admin UI (API-only for now).

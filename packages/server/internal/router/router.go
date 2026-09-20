@@ -10,6 +10,7 @@ import (
 	"github.com/mhmadamrii/kommers/server/internal/handler"
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
+	"github.com/mhmadamrii/kommers/server/internal/payment"
 	"github.com/mhmadamrii/kommers/server/internal/storage"
 )
 
@@ -31,7 +32,14 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 	cartHandler := handler.NewCartHandler(db, cfg.S3PublicURL, cfg.S3Bucket)
 	profileHandler := handler.NewProfileHandler(db)
 	addressHandler := handler.NewAddressHandler(db)
-	orderHandler := handler.NewOrderHandler(db, events)
+
+	// StripeSecretKey empty (not configured) leaves stripeClient nil —
+	// OrderHandler.Checkout then 503s instead of the server failing to boot.
+	var stripeClient *payment.StripeClient
+	if cfg.StripeSecretKey != "" {
+		stripeClient = payment.NewStripeClient(cfg.StripeSecretKey)
+	}
+	orderHandler := handler.NewOrderHandler(db, events, stripeClient, cfg.StripeWebhookSecret, cfg.FrontendURL)
 	campaignHandler := handler.NewCampaignHandler(db)
 	reviewHandler := handler.NewReviewHandler(db, storageClient, cfg.S3PublicURL, cfg.S3Bucket)
 
@@ -132,6 +140,10 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 		checkout := v1.Group("/checkout")
 		checkout.Use(middleware.RequireAuth(jwtSecret))
 		checkout.POST("", orderHandler.Checkout)
+
+		// Public: authenticated by Stripe-Signature verification instead of
+		// a bearer token — Stripe itself is the caller, never a logged-in user.
+		v1.POST("/webhooks/stripe", orderHandler.StripeWebhook)
 
 		orders := v1.Group("/orders")
 		orders.Use(middleware.RequireAuth(jwtSecret))

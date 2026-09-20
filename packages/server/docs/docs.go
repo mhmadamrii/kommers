@@ -624,7 +624,7 @@ const docTemplate = `{
                 "tags": [
                     "orders"
                 ],
-                "summary": "Convert the current cart into an order (payment integration pending)",
+                "summary": "Convert the current cart into an order and start a Stripe Checkout Session",
                 "parameters": [
                     {
                         "description": "Checkout payload",
@@ -640,7 +640,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.orderResponse"
+                            "$ref": "#/definitions/internal_handler.checkoutResponse"
                         }
                     },
                     "400": {
@@ -672,6 +672,24 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1509,7 +1527,44 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/products/{id}/reviews": {
+        "/api/v1/products/{slug}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "products"
+                ],
+                "summary": "Get an active product by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.productResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/products/{slug}/reviews": {
             "get": {
                 "produces": [
                     "application/json"
@@ -1520,9 +1575,9 @@ const docTemplate = `{
                 "summary": "List a product's reviews",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Product ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "Product slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     }
@@ -1534,6 +1589,15 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/internal_handler.reviewResponse"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     }
@@ -1557,9 +1621,9 @@ const docTemplate = `{
                 "summary": "Review a product you've purchased (one review per buyer per product)",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Product ID",
-                        "name": "id",
+                        "type": "string",
+                        "description": "Product slug",
+                        "name": "slug",
                         "in": "path",
                         "required": true
                     },
@@ -1598,6 +1662,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "409": {
                         "description": "Conflict",
                         "schema": {
@@ -1610,7 +1683,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/products/{id}/reviews/eligibility": {
+        "/api/v1/products/{slug}/reviews/eligibility": {
             "get": {
                 "security": [
                     {
@@ -1626,34 +1699,6 @@ const docTemplate = `{
                 "summary": "Whether the authenticated user can review a product (purchased it, hasn't reviewed yet)",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Product ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler.reviewEligibilityResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/products/{slug}": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "products"
-                ],
-                "summary": "Get an active product by slug",
-                "parameters": [
-                    {
                         "type": "string",
                         "description": "Product slug",
                         "name": "slug",
@@ -1665,7 +1710,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.productResponse"
+                            "$ref": "#/definitions/internal_handler.reviewEligibilityResponse"
                         }
                     },
                     "404": {
@@ -1814,6 +1859,34 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/webhooks/stripe": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Stripe webhook receiver (checkout.session.completed / checkout.session.expired)",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2218,6 +2291,41 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_handler.checkoutResponse": {
+            "type": "object",
+            "properties": {
+                "address_id": {
+                    "type": "integer"
+                },
+                "checkout_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler.orderItemResponse"
+                    }
+                },
+                "payment_status": {
+                    "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.PaymentStatus"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.OrderStatus"
+                },
+                "total_cents": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_handler.loginRequest": {
             "type": "object",
             "required": [
@@ -2266,6 +2374,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "currency": {
                     "type": "string"
                 },
                 "id": {

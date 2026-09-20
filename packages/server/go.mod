@@ -51,6 +51,7 @@ require (
 	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/rabbitmq/amqp091-go v1.15.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
+	github.com/stripe/stripe-go/v82 v82.5.1 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	github.com/swaggo/gin-swagger v1.6.1 // indirect
 	github.com/swaggo/swag v1.16.6 // indirect

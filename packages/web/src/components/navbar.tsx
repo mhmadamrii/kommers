@@ -1,5 +1,5 @@
 import { A, useNavigate } from '@solidjs/router';
-import { ChevronDown, LogOut, MapPin, Search, Store, User } from 'lucide-solid';
+import { ChevronDown, LogOut, MapPin, Package, Search, Store, User } from 'lucide-solid';
 import { For, Show, createSignal } from 'solid-js';
 import { toast } from 'somoto';
 import { Button } from '~/components/ui/button';
@@ -141,6 +141,10 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuContent class='w-48'>
+                    <DropdownMenuItem as={A} href='/orders' class='gap-2'>
+                      <Package class='size-4' aria-hidden='true' />
+                      Pesanan Saya
+                    </DropdownMenuItem>
                     <Show when={user().role !== 'admin'}>
                       <DropdownMenuItem
                         class='gap-2'

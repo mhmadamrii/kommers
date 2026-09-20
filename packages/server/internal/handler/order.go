@@ -2,18 +2,24 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stripe/stripe-go/v82"
+	"github.com/stripe/stripe-go/v82/webhook"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/mhmadamrii/kommers/server/internal/event"
 	"github.com/mhmadamrii/kommers/server/internal/middleware"
 	"github.com/mhmadamrii/kommers/server/internal/model"
+	"github.com/mhmadamrii/kommers/server/internal/payment"
 	"github.com/mhmadamrii/kommers/server/internal/pricing"
 )
 
@@ -27,10 +33,22 @@ type OrderEventPublisher interface {
 type OrderHandler struct {
 	DB     *gorm.DB
 	Events OrderEventPublisher
+	// Stripe nil disables checkout payment (503), same down-dependency
+	// pattern as Storage/RabbitMQ elsewhere in this codebase — a missing
+	// STRIPE_SECRET_KEY must never crash boot.
+	Stripe              *payment.StripeClient
+	StripeWebhookSecret string
+	FrontendURL         string
 }
 
-func NewOrderHandler(db *gorm.DB, events OrderEventPublisher) *OrderHandler {
-	return &OrderHandler{DB: db, Events: events}
+func NewOrderHandler(db *gorm.DB, events OrderEventPublisher, stripeClient *payment.StripeClient, stripeWebhookSecret, frontendURL string) *OrderHandler {
+	return &OrderHandler{
+		DB:                  db,
+		Events:              events,
+		Stripe:              stripeClient,
+		StripeWebhookSecret: stripeWebhookSecret,
+		FrontendURL:         frontendURL,
+	}
 }
 
 type checkoutRequest struct {
@@ -52,9 +70,17 @@ type orderResponse struct {
 	Status        model.OrderStatus   `json:"status"`
 	PaymentStatus model.PaymentStatus `json:"payment_status"`
 	AddressID     uint                `json:"address_id"`
+	Currency      string              `json:"currency"`
 	TotalCents    int64               `json:"total_cents"`
 	Items         []orderItemResponse `json:"items"`
 	CreatedAt     time.Time           `json:"created_at"`
+}
+
+// checkoutResponse is only returned by Checkout — CheckoutURL is where the
+// frontend redirects the browser to pay; List/GetByID never need it again.
+type checkoutResponse struct {
+	orderResponse
+	CheckoutURL string `json:"checkout_url"`
 }
 
 func newOrderResponse(o model.Order) orderResponse {
@@ -75,6 +101,7 @@ func newOrderResponse(o model.Order) orderResponse {
 		Status:        o.Status,
 		PaymentStatus: o.PaymentStatus,
 		AddressID:     o.AddressID,
+		Currency:      o.Currency,
 		TotalCents:    o.TotalCents,
 		Items:         items,
 		CreatedAt:     o.CreatedAt,
@@ -83,17 +110,19 @@ func newOrderResponse(o model.Order) orderResponse {
 
 // Checkout godoc
 //
-//	@Summary	Convert the current cart into an order (payment integration pending)
+//	@Summary	Convert the current cart into an order and start a Stripe Checkout Session
 //	@Tags		orders
 //	@Security	BearerAuth
 //	@Accept		json
 //	@Produce	json
 //	@Param		request	body		checkoutRequest	true	"Checkout payload"
-//	@Success	201		{object}	orderResponse
+//	@Success	201		{object}	checkoutResponse
 //	@Failure	400		{object}	map[string]string
 //	@Failure	401		{object}	map[string]string
 //	@Failure	404		{object}	map[string]string
 //	@Failure	409		{object}	map[string]string
+//	@Failure	502		{object}	map[string]string
+//	@Failure	503		{object}	map[string]string
 //	@Router		/api/v1/checkout [post]
 func (h *OrderHandler) Checkout(c *gin.Context) {
 	userID := c.MustGet(middleware.CtxUserID).(uint)
@@ -221,6 +250,47 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 
 	h.DB.Preload("Items").First(&order, order.ID)
 
+	if h.Stripe == nil {
+		if err := h.restoreStockAndCancel(order, model.OrderStatusCancelled, model.PaymentStatusFailed); err != nil {
+			slog.Error("restore stock after stripe unavailable failed", "order_id", order.ID, "error", err)
+		}
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "payment processing unavailable"})
+		return
+	}
+
+	lineItems := make([]payment.CheckoutLineItem, len(order.Items))
+	for i, item := range order.Items {
+		lineItems[i] = payment.CheckoutLineItem{
+			Name:       item.ProductName,
+			UnitAmount: item.PriceCents,
+			Quantity:   int64(item.Quantity),
+		}
+	}
+
+	successURL := fmt.Sprintf("%s/orders/%d?payment=success", h.FrontendURL, order.ID)
+	cancelURL := fmt.Sprintf("%s/orders/%d?payment=cancelled", h.FrontendURL, order.ID)
+
+	session, currencyUsed, err := h.Stripe.CreateCheckoutSessionWithFallback(
+		c.Request.Context(), "idr", "usd", lineItems, successURL, cancelURL,
+		map[string]string{"order_id": strconv.FormatUint(uint64(order.ID), 10)},
+	)
+	if err != nil {
+		slog.Error("create stripe checkout session failed", "order_id", order.ID, "error", err)
+		if rbErr := h.restoreStockAndCancel(order, model.OrderStatusCancelled, model.PaymentStatusFailed); rbErr != nil {
+			slog.Error("restore stock after stripe session failure failed", "order_id", order.ID, "error", rbErr)
+		}
+		c.JSON(http.StatusBadGateway, gin.H{"error": "failed to start payment: " + err.Error()})
+		return
+	}
+
+	order.PaymentProvider = "stripe"
+	order.PaymentRef = session.ID
+	order.Currency = currencyUsed
+	if err := h.DB.Save(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
 	// Best-effort: a down/unreachable broker must never fail checkout.
 	if h.Events != nil {
 		var user model.User
@@ -238,7 +308,90 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusCreated, newOrderResponse(order))
+	c.JSON(http.StatusCreated, checkoutResponse{orderResponse: newOrderResponse(order), CheckoutURL: session.URL})
+}
+
+// restoreStockAndCancel reverses the stock (and campaign stock_used) decrement
+// from a Checkout run and marks the order terminal — used both when payment
+// setup itself fails and when a Stripe session expires unpaid.
+func (h *OrderHandler) restoreStockAndCancel(order model.Order, newStatus model.OrderStatus, newPaymentStatus model.PaymentStatus) error {
+	return h.DB.Transaction(func(tx *gorm.DB) error {
+		var items []model.OrderItem
+		if err := tx.Where("order_id = ?", order.ID).Find(&items).Error; err != nil {
+			return err
+		}
+		for _, item := range items {
+			if err := tx.Model(&model.Product{}).Where("id = ?", item.ProductID).
+				UpdateColumn("stock", gorm.Expr("stock + ?", item.Quantity)).Error; err != nil {
+				return err
+			}
+			if item.CampaignID != nil {
+				if err := tx.Model(&model.Campaign{}).Where("id = ?", *item.CampaignID).
+					UpdateColumn("stock_used", gorm.Expr("stock_used - ?", item.Quantity)).Error; err != nil {
+					return err
+				}
+			}
+		}
+		return tx.Model(&model.Order{}).Where("id = ?", order.ID).
+			Updates(map[string]interface{}{"status": newStatus, "payment_status": newPaymentStatus}).Error
+	})
+}
+
+// StripeWebhook godoc
+//
+//	@Summary	Stripe webhook receiver (checkout.session.completed / checkout.session.expired)
+//	@Tags		orders
+//	@Accept		json
+//	@Produce	json
+//	@Success	200
+//	@Failure	400	{object}	map[string]string
+//	@Router		/api/v1/webhooks/stripe [post]
+func (h *OrderHandler) StripeWebhook(c *gin.Context) {
+	payloadBytes, err := c.GetRawData()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		return
+	}
+
+	evt, err := webhook.ConstructEvent(payloadBytes, c.GetHeader("Stripe-Signature"), h.StripeWebhookSecret)
+	if err != nil {
+		slog.Error("stripe webhook signature verification failed", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid signature"})
+		return
+	}
+
+	switch evt.Type {
+	case "checkout.session.completed":
+		var session stripe.CheckoutSession
+		if err := json.Unmarshal(evt.Data.Raw, &session); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "malformed payload"})
+			return
+		}
+		if err := h.DB.Model(&model.Order{}).
+			Where("payment_ref = ?", session.ID).
+			Updates(map[string]interface{}{
+				"status":         model.OrderStatusPaid,
+				"payment_status": model.PaymentStatusPaid,
+			}).Error; err != nil {
+			slog.Error("mark order paid failed", "session_id", session.ID, "error", err)
+		}
+
+	case "checkout.session.expired":
+		var session stripe.CheckoutSession
+		if err := json.Unmarshal(evt.Data.Raw, &session); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "malformed payload"})
+			return
+		}
+		var order model.Order
+		err := h.DB.Where("payment_ref = ? AND status = ?", session.ID, model.OrderStatusPending).First(&order).Error
+		if err == nil {
+			if restoreErr := h.restoreStockAndCancel(order, model.OrderStatusCancelled, model.PaymentStatusFailed); restoreErr != nil {
+				slog.Error("restore stock after session expiry failed", "order_id", order.ID, "error", restoreErr)
+			}
+		}
+	}
+
+	c.Status(http.StatusOK)
 }
 
 // List godoc

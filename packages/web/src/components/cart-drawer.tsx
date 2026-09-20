@@ -1,10 +1,10 @@
+import { A } from '@solidjs/router';
 import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-solid';
-import { For, Show, createMemo } from 'solid-js';
+import { createMemo, createSignal, For, Show } from 'solid-js';
 import { toast } from 'somoto';
-import { Button } from '~/components/ui/button';
+import { Button, buttonVariants } from '~/components/ui/button';
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
@@ -83,12 +83,13 @@ function CartRow(props: { item: CartItem }) {
 }
 
 export function CartDrawer() {
+  const [open, setOpen] = createSignal(false);
   const cartQuery = useCartQuery();
   const items = () => cartQuery.data?.items ?? [];
   const itemCount = createMemo(() => items().reduce((sum, item) => sum + item.quantity, 0));
 
   return (
-    <Drawer side='right'>
+    <Drawer side='right' open={open()} onOpenChange={setOpen}>
       <DrawerTrigger
         as='button'
         class='relative inline-flex size-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent hover:text-accent-foreground'
@@ -134,9 +135,13 @@ export function CartDrawer() {
               <span>Total</span>
               <span>{formatPriceCents(cartQuery.data?.total_cents ?? 0)}</span>
             </div>
-            <DrawerClose as={Button} class='w-full'>
+            <A
+              href='/checkout'
+              onClick={() => setOpen(false)}
+              class={buttonVariants({ class: 'w-full' })}
+            >
               Checkout
-            </DrawerClose>
+            </A>
           </div>
         </Show>
       </DrawerContent>

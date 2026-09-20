@@ -29,10 +29,13 @@ type Order struct {
 	// PaymentProvider/PaymentRef stay empty until a payment gateway (e.g. Stripe) is
 	// wired up: Provider will hold "stripe", Ref will hold the checkout session /
 	// payment intent id so a webhook can look the order back up.
-	PaymentProvider string      `gorm:"size:50"`
-	PaymentRef      string      `gorm:"size:255;index"`
-	TotalCents      int64       `gorm:"not null"`
-	Items           []OrderItem `gorm:"foreignKey:OrderID"`
+	PaymentProvider string `gorm:"size:50"`
+	PaymentRef      string `gorm:"size:255;index"`
+	// Currency actually charged via Stripe — may fall back from the store's
+	// nominal "idr" to "usd" if the Stripe account can't present IDR.
+	Currency   string      `gorm:"size:3;not null;default:idr"`
+	TotalCents int64       `gorm:"not null"`
+	Items      []OrderItem `gorm:"foreignKey:OrderID"`
 }
 
 // OrderItem snapshots product name/price at purchase time so later product

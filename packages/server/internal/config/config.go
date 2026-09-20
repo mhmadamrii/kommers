@@ -26,6 +26,13 @@ type Config struct {
 	// differ from S3Endpoint (e.g. compose's internal "minio:9000" vs. the
 	// host-exposed "localhost:9000").
 	S3PublicURL string
+	// StripeSecretKey empty disables Stripe entirely (Checkout 503s, same
+	// down-dependency pattern as Storage/RabbitMQ) rather than crashing boot.
+	StripeSecretKey     string
+	StripeWebhookSecret string
+	// FrontendURL builds the Checkout Session's success/cancel redirect
+	// targets — never guessed from a request header.
+	FrontendURL string
 }
 
 func Load() Config {
@@ -41,21 +48,24 @@ func Load() Config {
 	}
 
 	return Config{
-		Port:               getEnv("PORT", "8080"),
-		Env:                env,
-		DatabaseURL:        getEnv("DATABASE_URL", "postgres://amri@localhost:5432/kommers?sslmode=disable"),
-		JWTSecret:          getEnv("JWT_SECRET", "dev-secret-change-me"),
-		JWTExpiry:          time.Duration(expiryHours) * time.Hour,
-		RabbitMQURL:        getEnv("RABBITMQ_URL", "amqp://kommers:kommers@localhost:5672/"),
-		CORSAllowedOrigins: splitCSV(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
-		CookieDomain:       getEnv("COOKIE_DOMAIN", ""),
-		CookieSecure:       cookieSecure,
-		S3Endpoint:         getEnv("S3_ENDPOINT", "localhost:9000"),
-		S3AccessKeyID:      getEnv("S3_ACCESS_KEY_ID", "kommers"),
-		S3SecretAccessKey:  getEnv("S3_SECRET_ACCESS_KEY", "kommers123"),
-		S3Bucket:           getEnv("S3_BUCKET", "kommers"),
-		S3UseSSL:           getEnv("S3_USE_SSL", "false") == "true",
-		S3PublicURL:        getEnv("S3_PUBLIC_URL", "http://localhost:9000"),
+		Port:                getEnv("PORT", "8080"),
+		Env:                 env,
+		DatabaseURL:         getEnv("DATABASE_URL", "postgres://amri@localhost:5432/kommers?sslmode=disable"),
+		JWTSecret:           getEnv("JWT_SECRET", "dev-secret-change-me"),
+		JWTExpiry:           time.Duration(expiryHours) * time.Hour,
+		RabbitMQURL:         getEnv("RABBITMQ_URL", "amqp://kommers:kommers@localhost:5672/"),
+		CORSAllowedOrigins:  splitCSV(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
+		CookieDomain:        getEnv("COOKIE_DOMAIN", ""),
+		CookieSecure:        cookieSecure,
+		S3Endpoint:          getEnv("S3_ENDPOINT", "localhost:9000"),
+		S3AccessKeyID:       getEnv("S3_ACCESS_KEY_ID", "kommers"),
+		S3SecretAccessKey:   getEnv("S3_SECRET_ACCESS_KEY", "kommers123"),
+		S3Bucket:            getEnv("S3_BUCKET", "kommers"),
+		S3UseSSL:            getEnv("S3_USE_SSL", "false") == "true",
+		S3PublicURL:         getEnv("S3_PUBLIC_URL", "http://localhost:9000"),
+		StripeSecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
+		StripeWebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
+		FrontendURL:         getEnv("FRONTEND_URL", "http://localhost:3000"),
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 	"github.com/mhmadamrii/kommers/server/internal/model"
 	"github.com/mhmadamrii/kommers/server/internal/payment"
 	"github.com/mhmadamrii/kommers/server/internal/pricing"
+	"github.com/mhmadamrii/kommers/server/internal/storage"
 )
 
 // OrderEventPublisher is satisfied by *broker.Publisher. Kept as an
@@ -39,16 +40,41 @@ type OrderHandler struct {
 	Stripe              *payment.StripeClient
 	StripeWebhookSecret string
 	FrontendURL         string
+	// PublicURLBase/Bucket build order-item image URLs — same pattern as
+	// CartHandler, kept separate rather than shared since each handler owns
+	// its own tiny image-URL-picking helper.
+	PublicURLBase string
+	Bucket        string
 }
 
-func NewOrderHandler(db *gorm.DB, events OrderEventPublisher, stripeClient *payment.StripeClient, stripeWebhookSecret, frontendURL string) *OrderHandler {
+func NewOrderHandler(db *gorm.DB, events OrderEventPublisher, stripeClient *payment.StripeClient, stripeWebhookSecret, frontendURL, publicURLBase, bucket string) *OrderHandler {
 	return &OrderHandler{
 		DB:                  db,
 		Events:              events,
 		Stripe:              stripeClient,
 		StripeWebhookSecret: stripeWebhookSecret,
 		FrontendURL:         frontendURL,
+		PublicURLBase:       publicURLBase,
+		Bucket:              bucket,
 	}
+}
+
+// primaryImageURL picks a product's primary image (falling back to the
+// first by sort order) — mirrors CartHandler's ordering so order history
+// shows the same thumbnail as everywhere else.
+func (h *OrderHandler) primaryImageURL(images []model.ProductImage) string {
+	if len(images) == 0 {
+		return ""
+	}
+	best := images[0]
+	for _, img := range images[1:] {
+		if img.IsPrimary && !best.IsPrimary {
+			best = img
+		} else if img.IsPrimary == best.IsPrimary && img.SortOrder < best.SortOrder {
+			best = img
+		}
+	}
+	return storage.BuildPublicURL(h.PublicURLBase, h.Bucket, best.ObjectKey)
 }
 
 type checkoutRequest struct {
@@ -58,7 +84,10 @@ type checkoutRequest struct {
 type orderItemResponse struct {
 	ID            uint   `json:"id"`
 	ProductID     uint   `json:"product_id"`
+	ProductSlug   string `json:"product_slug"`
 	ProductName   string `json:"product_name"`
+	ImageURL      string `json:"image_url"`
+	SellerName    string `json:"seller_name"`
 	Quantity      int    `json:"quantity"`
 	PriceCents    int64  `json:"price_cents"`
 	CampaignID    *uint  `json:"campaign_id,omitempty"`
@@ -70,6 +99,7 @@ type orderResponse struct {
 	Status        model.OrderStatus   `json:"status"`
 	PaymentStatus model.PaymentStatus `json:"payment_status"`
 	AddressID     uint                `json:"address_id"`
+	Address       *addressResponse    `json:"address,omitempty"`
 	Currency      string              `json:"currency"`
 	TotalCents    int64               `json:"total_cents"`
 	Items         []orderItemResponse `json:"items"`
@@ -83,20 +113,24 @@ type checkoutResponse struct {
 	CheckoutURL string `json:"checkout_url"`
 }
 
-func newOrderResponse(o model.Order) orderResponse {
+func (h *OrderHandler) newOrderResponse(o model.Order) orderResponse {
 	items := make([]orderItemResponse, len(o.Items))
 	for i, item := range o.Items {
 		items[i] = orderItemResponse{
 			ID:            item.ID,
 			ProductID:     item.ProductID,
+			ProductSlug:   item.Product.Slug,
 			ProductName:   item.ProductName,
+			ImageURL:      h.primaryImageURL(item.Product.Images),
+			SellerName:    item.Product.Owner.FullName,
 			Quantity:      item.Quantity,
 			PriceCents:    item.PriceCents,
 			CampaignID:    item.CampaignID,
 			SubtotalCents: item.SubtotalCents,
 		}
 	}
-	return orderResponse{
+
+	res := orderResponse{
 		ID:            o.ID,
 		Status:        o.Status,
 		PaymentStatus: o.PaymentStatus,
@@ -106,6 +140,11 @@ func newOrderResponse(o model.Order) orderResponse {
 		Items:         items,
 		CreatedAt:     o.CreatedAt,
 	}
+	if o.Address.ID != 0 {
+		addr := newAddressResponse(o.Address)
+		res.Address = &addr
+	}
+	return res
 }
 
 // Checkout godoc
@@ -248,7 +287,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		return
 	}
 
-	h.DB.Preload("Items").First(&order, order.ID)
+	h.DB.Preload("Items.Product.Owner").Preload("Items.Product.Images").Preload("Address").First(&order, order.ID)
 
 	if h.Stripe == nil {
 		if err := h.restoreStockAndCancel(order, model.OrderStatusCancelled, model.PaymentStatusFailed); err != nil {
@@ -308,7 +347,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusCreated, checkoutResponse{orderResponse: newOrderResponse(order), CheckoutURL: session.URL})
+	c.JSON(http.StatusCreated, checkoutResponse{orderResponse: h.newOrderResponse(order), CheckoutURL: session.URL})
 }
 
 // restoreStockAndCancel reverses the stock (and campaign stock_used) decrement
@@ -407,14 +446,15 @@ func (h *OrderHandler) List(c *gin.Context) {
 	userID := c.MustGet(middleware.CtxUserID).(uint)
 
 	var orders []model.Order
-	if err := h.DB.Preload("Items").Where("user_id = ?", userID).Order("id desc").Find(&orders).Error; err != nil {
+	if err := h.DB.Preload("Items.Product.Owner").Preload("Items.Product.Images").Preload("Address").
+		Where("user_id = ?", userID).Order("id desc").Find(&orders).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 
 	res := make([]orderResponse, len(orders))
 	for i, o := range orders {
-		res[i] = newOrderResponse(o)
+		res[i] = h.newOrderResponse(o)
 	}
 
 	c.JSON(http.StatusOK, res)
@@ -436,7 +476,7 @@ func (h *OrderHandler) GetByID(c *gin.Context) {
 	role, _ := c.MustGet(middleware.CtxRole).(model.Role)
 
 	var order model.Order
-	query := h.DB.Preload("Items")
+	query := h.DB.Preload("Items.Product.Owner").Preload("Items.Product.Images").Preload("Address")
 	if role != model.RoleAdmin {
 		query = query.Where("user_id = ?", userID)
 	}
@@ -445,5 +485,5 @@ func (h *OrderHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, newOrderResponse(order))
+	c.JSON(http.StatusOK, h.newOrderResponse(order))
 }

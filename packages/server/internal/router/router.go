@@ -39,7 +39,7 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 	if cfg.StripeSecretKey != "" {
 		stripeClient = payment.NewStripeClient(cfg.StripeSecretKey)
 	}
-	orderHandler := handler.NewOrderHandler(db, events, stripeClient, cfg.StripeWebhookSecret, cfg.FrontendURL)
+	orderHandler := handler.NewOrderHandler(db, events, stripeClient, cfg.StripeWebhookSecret, cfg.FrontendURL, cfg.S3PublicURL, cfg.S3Bucket)
 	campaignHandler := handler.NewCampaignHandler(db)
 	reviewHandler := handler.NewReviewHandler(db, storageClient, cfg.S3PublicURL, cfg.S3Bucket)
 

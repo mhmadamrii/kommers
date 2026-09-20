@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/mhmadamrii/kommers/server/internal/broker"
@@ -20,6 +21,11 @@ import (
 )
 
 func main() {
+	// Same .env as cmd/server — missing file is expected outside local dev.
+	if err := godotenv.Load(); err != nil {
+		slog.Debug("no .env file found, using existing process environment")
+	}
+
 	url := os.Getenv("RABBITMQ_URL")
 	if url == "" {
 		url = "amqp://kommers:kommers@localhost:5672/"

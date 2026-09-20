@@ -2294,6 +2294,9 @@ const docTemplate = `{
         "internal_handler.checkoutResponse": {
             "type": "object",
             "properties": {
+                "address": {
+                    "$ref": "#/definitions/internal_handler.addressResponse"
+                },
                 "address_id": {
                     "type": "integer"
                 },
@@ -2350,6 +2353,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "image_url": {
+                    "type": "string"
+                },
                 "price_cents": {
                     "type": "integer"
                 },
@@ -2359,8 +2365,14 @@ const docTemplate = `{
                 "product_name": {
                     "type": "string"
                 },
+                "product_slug": {
+                    "type": "string"
+                },
                 "quantity": {
                     "type": "integer"
+                },
+                "seller_name": {
+                    "type": "string"
                 },
                 "subtotal_cents": {
                     "type": "integer"
@@ -2370,6 +2382,9 @@ const docTemplate = `{
         "internal_handler.orderResponse": {
             "type": "object",
             "properties": {
+                "address": {
+                    "$ref": "#/definitions/internal_handler.addressResponse"
+                },
                 "address_id": {
                     "type": "integer"
                 },

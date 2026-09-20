@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	_ "github.com/mhmadamrii/kommers/server/docs"
 	"github.com/mhmadamrii/kommers/server/internal/broker"
 	"github.com/mhmadamrii/kommers/server/internal/config"
@@ -22,6 +24,13 @@ import (
 // @name						Authorization
 // @description				Type "Bearer" followed by a space and the JWT token.
 func main() {
+	// Loads packages/server/.env into the process environment if present —
+	// docker-compose/production set these directly and have no .env file,
+	// so a missing file here is expected, not an error.
+	if err := godotenv.Load(); err != nil {
+		slog.Debug("no .env file found, using existing process environment")
+	}
+
 	cfg := config.Load()
 
 	db, err := database.Connect(cfg.DatabaseURL)

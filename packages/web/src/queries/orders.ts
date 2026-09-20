@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
 import type { Accessor } from 'solid-js';
 import { apiFetch } from '~/lib/api-client';
+import type { Address } from '~/queries/addresses';
 import { CART_QUERY_KEY } from '~/queries/cart';
 
 export type OrderStatus = 'pending' | 'paid' | 'cancelled';
@@ -9,7 +10,10 @@ export type PaymentStatus = 'pending' | 'paid' | 'failed';
 export type OrderItem = {
   id: number;
   product_id: number;
+  product_slug: string;
   product_name: string;
+  image_url: string;
+  seller_name: string;
   quantity: number;
   price_cents: number;
   campaign_id?: number;
@@ -23,6 +27,7 @@ export type Order = {
   status: OrderStatus;
   payment_status: PaymentStatus;
   address_id: number;
+  address?: Address;
   currency: string;
   total_cents: number;
   items: OrderItem[];

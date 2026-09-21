@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "deploy:cf": "vinxi build && wrangler deploy",
+    "preview:cf": "wrangler dev .output/server/index.mjs --assets .output/public"
   },
   "dependencies": {
     "@corvu/drawer": "^0.2.4",
@@ -26,6 +28,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.9",
     "tailwindcss": "^4.0.9",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "wrangler": "^4.0.0"
   }
 }

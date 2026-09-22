@@ -20,15 +20,19 @@ type AuthHandler struct {
 	JWTExpiry    time.Duration
 	CookieDomain string
 	CookieSecure bool
+	// CookieSameSite comes from config — "lax" only survives when the web
+	// app and the API are the same site, which is local development only.
+	CookieSameSite http.SameSite
 }
 
-func NewAuthHandler(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration, cookieDomain string, cookieSecure bool) *AuthHandler {
+func NewAuthHandler(db *gorm.DB, jwtSecret string, jwtExpiry time.Duration, cookieDomain string, cookieSecure bool, cookieSameSite http.SameSite) *AuthHandler {
 	return &AuthHandler{
-		DB:           db,
-		JWTSecret:    jwtSecret,
-		JWTExpiry:    jwtExpiry,
-		CookieDomain: cookieDomain,
-		CookieSecure: cookieSecure,
+		DB:             db,
+		JWTSecret:      jwtSecret,
+		JWTExpiry:      jwtExpiry,
+		CookieDomain:   cookieDomain,
+		CookieSecure:   cookieSecure,
+		CookieSameSite: cookieSameSite,
 	}
 }
 
@@ -141,7 +145,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 //	@Success	204
 //	@Router		/api/v1/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	c.SetSameSite(http.SameSiteLaxMode)
+	// Must match the attributes Set used, or the browser treats this as a
+	// different cookie and leaves the original in place.
+	c.SetSameSite(h.CookieSameSite)
 	c.SetCookie(middleware.CookieName, "", -1, "/", h.CookieDomain, h.CookieSecure, true)
 	c.Status(http.StatusNoContent)
 }
@@ -153,7 +159,7 @@ func (h *AuthHandler) respondWithToken(c *gin.Context, status int, user model.Us
 		return
 	}
 
-	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetSameSite(h.CookieSameSite)
 	c.SetCookie(
 		middleware.CookieName,
 		tok,

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -17,11 +18,20 @@ type Config struct {
 	CORSAllowedOrigins []string
 	CookieDomain       string
 	CookieSecure       bool
-	S3Endpoint         string
-	S3AccessKeyID      string
-	S3SecretAccessKey  string
-	S3Bucket           string
-	S3UseSSL           bool
+	// CookieSameSite decides whether a browser keeps the auth cookie at all
+	// when the login response is cross-site. The web app and the API are
+	// separate registrable domains in every deployed topology we have
+	// (Cloudflare Workers -> api.kommers.store, and localhost:3000 -> the
+	// same remote API during dev), so "lax" there means the browser drops
+	// the Set-Cookie without any error — login looks fine until the next
+	// reload finds no session. "none" is the only value that works
+	// cross-site, and it implies Secure.
+	CookieSameSite    http.SameSite
+	S3Endpoint        string
+	S3AccessKeyID     string
+	S3SecretAccessKey string
+	S3Bucket          string
+	S3UseSSL          bool
 	// S3PublicURL is the scheme+host a browser reaches the bucket at — may
 	// differ from S3Endpoint (e.g. compose's internal "minio:9000" vs. the
 	// host-exposed "localhost:9000").
@@ -47,6 +57,14 @@ func Load() Config {
 		cookieSecure = v == "true"
 	}
 
+	// Browsers reject SameSite=None unless Secure is also set, so this is a
+	// correction rather than an override — honouring COOKIE_SECURE=false
+	// here would just produce a cookie nothing stores.
+	cookieSameSite := parseSameSite(getEnv("COOKIE_SAMESITE", defaultSameSite(env)))
+	if cookieSameSite == http.SameSiteNoneMode {
+		cookieSecure = true
+	}
+
 	return Config{
 		Port:                getEnv("PORT", "8080"),
 		Env:                 env,
@@ -57,6 +75,7 @@ func Load() Config {
 		CORSAllowedOrigins:  splitCSV(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
 		CookieDomain:        getEnv("COOKIE_DOMAIN", ""),
 		CookieSecure:        cookieSecure,
+		CookieSameSite:      cookieSameSite,
 		S3Endpoint:          getEnv("S3_ENDPOINT", "localhost:9000"),
 		S3AccessKeyID:       getEnv("S3_ACCESS_KEY_ID", "kommers"),
 		S3SecretAccessKey:   getEnv("S3_SECRET_ACCESS_KEY", "kommers123"),
@@ -66,6 +85,27 @@ func Load() Config {
 		StripeSecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
 		StripeWebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
 		FrontendURL:         getEnv("FRONTEND_URL", "http://localhost:3000"),
+	}
+}
+
+// defaultSameSite keeps local development (web and API both on localhost,
+// same site, plain HTTP) on "lax", where Secure cookies can't be set at all.
+// Anywhere else the two are cross-site and need "none".
+func defaultSameSite(env string) string {
+	if env == "development" {
+		return "lax"
+	}
+	return "none"
+}
+
+func parseSameSite(v string) http.SameSite {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "none":
+		return http.SameSiteNoneMode
+	case "strict":
+		return http.SameSiteStrictMode
+	default:
+		return http.SameSiteLaxMode
 	}
 }
 

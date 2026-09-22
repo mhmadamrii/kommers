@@ -56,7 +56,17 @@ export function useLoginMutation() {
         method: 'POST',
         body: JSON.stringify(input),
       }),
-    onSuccess: (data) => queryClient.setQueryData(ME_QUERY_KEY, data.user),
+    onSuccess: (data) => {
+      // Paint from the response body for an instant transition, then
+      // confirm against the server. The body only proves the credentials
+      // were accepted — it does NOT prove the browser kept the auth
+      // cookie, which it silently discards if the Set-Cookie's SameSite
+      // doesn't permit the web app's origin. Without this refetch the UI
+      // shows a logged-in session that doesn't exist, and the lie only
+      // surfaces on the next reload.
+      queryClient.setQueryData(ME_QUERY_KEY, data.user);
+      void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+    },
   }));
 }
 
@@ -68,7 +78,17 @@ export function useRegisterMutation() {
         method: 'POST',
         body: JSON.stringify(input),
       }),
-    onSuccess: (data) => queryClient.setQueryData(ME_QUERY_KEY, data.user),
+    onSuccess: (data) => {
+      // Paint from the response body for an instant transition, then
+      // confirm against the server. The body only proves the credentials
+      // were accepted — it does NOT prove the browser kept the auth
+      // cookie, which it silently discards if the Set-Cookie's SameSite
+      // doesn't permit the web app's origin. Without this refetch the UI
+      // shows a logged-in session that doesn't exist, and the lie only
+      // surfaces on the next reload.
+      queryClient.setQueryData(ME_QUERY_KEY, data.user);
+      void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+    },
   }));
 }
 
@@ -88,6 +108,13 @@ export function useLogoutMutation() {
   const queryClient = useQueryClient();
   return useMutation(() => ({
     mutationFn: () => apiFetch<void>('/api/v1/auth/logout', { method: 'POST' }),
-    onSuccess: () => queryClient.setQueryData(ME_QUERY_KEY, null),
+    onSuccess: () => {
+      // Same reasoning as login, inverted: if the clearing cookie didn't
+      // match the attributes the original was set with, the browser keeps
+      // the old one and the session is still live. Confirm rather than
+      // assume.
+      queryClient.setQueryData(ME_QUERY_KEY, null);
+      void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+    },
   }));
 }

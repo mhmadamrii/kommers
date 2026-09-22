@@ -25,7 +25,7 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 	jwtSecret := cfg.JWTSecret
 	jwtExpiry := cfg.JWTExpiry
 
-	authHandler := handler.NewAuthHandler(db, jwtSecret, jwtExpiry, cfg.CookieDomain, cfg.CookieSecure)
+	authHandler := handler.NewAuthHandler(db, jwtSecret, jwtExpiry, cfg.CookieDomain, cfg.CookieSecure, cfg.CookieSameSite)
 	productHandler := handler.NewProductHandler(db, storageClient, cfg.S3PublicURL, cfg.S3Bucket)
 	sellerHandler := handler.NewSellerHandler(db)
 	categoryHandler := handler.NewCategoryHandler(db)

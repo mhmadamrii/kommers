@@ -3,3 +3,7 @@ api.kommers.store {
 
 	reverse_proxy server:8080
 }
+
+s3.kommers.store {
+	reverse_proxy minio:9000
+}

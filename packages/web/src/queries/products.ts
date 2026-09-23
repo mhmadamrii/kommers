@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
 import type { Accessor } from 'solid-js';
 import { apiFetch, canResolveSession } from '~/lib/api-client';
 
@@ -109,6 +109,16 @@ export function useProductsQuery(filters: Accessor<ProductFilters>) {
   return useQuery(() => ({
     queryKey: ['products', filters()],
     queryFn: () => fetchProducts(filters()),
+    // Picking a filter combination visited for the first time this session
+    // has nothing cached under its queryKey, so solid-query's Suspense
+    // integration has no data to read and suspends — that bubbles all the
+    // way to app.tsx's single fallback-less root <Suspense> and blanks the
+    // entire page, not just this grid. keepPreviousData keeps the last
+    // result in `.data` across the key change so there's always something
+    // to read, trading a flash of stale results (isFetching still flips
+    // true, so a spinner/skeleton driven off that is still accurate) for
+    // never suspending on a filter change.
+    placeholderData: keepPreviousData,
   }));
 }
 
@@ -164,6 +174,14 @@ export function useUploadProductImagesMutation() {
         body: form,
       });
     },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: MY_PRODUCTS_QUERY_KEY }),
+  }));
+}
+
+export function useDeleteProductMutation() {
+  const queryClient = useQueryClient();
+  return useMutation(() => ({
+    mutationFn: (id: number) => apiFetch<void>(`/api/v1/products/${id}`, { method: 'DELETE' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: MY_PRODUCTS_QUERY_KEY }),
   }));
 }

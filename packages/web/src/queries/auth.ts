@@ -100,6 +100,18 @@ export function useRegisterMutation() {
   }));
 }
 
+export function useUpdateMeMutation() {
+  const queryClient = useQueryClient();
+  return useMutation(() => ({
+    mutationFn: (input: { full_name: string }) =>
+      apiFetch<AuthUser>('/api/v1/me', {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (user) => queryClient.setQueryData(ME_QUERY_KEY, user),
+  }));
+}
+
 export function useApplySellerMutation() {
   const queryClient = useQueryClient();
   return useMutation(() => ({

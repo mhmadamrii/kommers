@@ -1,15 +1,12 @@
 import { A, useNavigate } from '@solidjs/router';
-import { ChevronDown, LogOut, MapPin, Package, Search, Store, User } from 'lucide-solid';
+import { Flame, LogOut, MapPin, Package, Search, Store, Ticket, TrendingUp, User } from 'lucide-solid';
 import { For, Show, createSignal } from 'solid-js';
 import { toast } from 'somoto';
 import { Button } from '~/components/ui/button';
 import { CartDrawer } from '~/components/cart-drawer';
 import { LoginDialog } from '~/components/login-dialog';
 import { SellerApplyDialog } from '~/components/seller-apply-dialog';
-import { Skeleton } from '~/components/ui/skeleton';
 import { TextField, TextFieldInput } from '~/components/ui/text-field';
-import { categoryIcon } from '~/lib/category-icons';
-import { useCategoriesQuery } from '~/queries/categories';
 import { useLogoutMutation, useMeQuery } from '~/queries/auth';
 
 import {
@@ -20,12 +17,19 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown';
 
+// Static marketing shortcuts, not category data — some of these routes
+// don't exist yet (/flash-sale, /vouchers). They're placeholders for pages
+// to be built later, deliberately not wired to any query.
+const QUICK_LINKS = [
+  { label: 'Flash Sale', href: '/flash-sale', icon: Flame },
+  { label: 'Produk Terbaru', href: '/products?sort=newest', icon: TrendingUp },
+  { label: 'Voucher Saya', href: '/vouchers', icon: Ticket },
+];
+
 export function Navbar() {
   const navigate = useNavigate();
   const meQuery = useMeQuery();
-  const categoriesQuery = useCategoriesQuery();
   const logout = useLogoutMutation();
-  const categories = () => categoriesQuery.data ?? [];
   const [searchValue, setSearchValue] = createSignal('');
   const [sellerDialogOpen, setSellerDialogOpen] = createSignal(false);
 
@@ -48,36 +52,6 @@ export function Navbar() {
           <Store class='size-6' aria-hidden='true' />
           kommers
         </A>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            as={Button}
-            variant='ghost'
-            class='hidden shrink-0 gap-1 text-sm font-medium sm:inline-flex'
-          >
-            Kategori
-            <ChevronDown class='size-4' aria-hidden='true' />
-          </DropdownMenuTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuContent class='w-56'>
-              <For each={categories()}>
-                {(category) => (
-                  <DropdownMenuItem
-                    as={A}
-                    href={`/products?category_id=${category.id}`}
-                    class='gap-2'
-                  >
-                    {(() => {
-                      const Icon = categoryIcon(category.slug);
-                      return <Icon class='size-4 text-muted-foreground' aria-hidden='true' />;
-                    })()}
-                    {category.name}
-                  </DropdownMenuItem>
-                )}
-              </For>
-            </DropdownMenuContent>
-          </DropdownMenuPortal>
-        </DropdownMenu>
 
         <form
           class='w-full max-w-3xl flex-1'
@@ -141,6 +115,10 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuContent class='w-48'>
+                    <DropdownMenuItem as={A} href='/profile' class='gap-2'>
+                      <User class='size-4' aria-hidden='true' />
+                      Profil Saya
+                    </DropdownMenuItem>
                     <DropdownMenuItem as={A} href='/orders' class='gap-2'>
                       <Package class='size-4' aria-hidden='true' />
                       Pesanan Saya
@@ -175,29 +153,17 @@ export function Navbar() {
       <SellerApplyDialog open={sellerDialogOpen()} onOpenChange={setSellerDialogOpen} />
 
       <nav class='scrollbar-none flex gap-2 overflow-x-auto border-t border-border/60 px-4 py-2 sm:px-6'>
-        <Show
-          when={!categoriesQuery.isLoading}
-          fallback={
-            <For each={Array(6).fill(0)}>
-              {() => <Skeleton class='h-7 w-24 shrink-0 rounded-full' />}
-            </For>
-          }
-        >
-          <For each={categories()}>
-            {(category) => {
-              const Icon = categoryIcon(category.slug);
-              return (
-                <A
-                  href={`/products?category_id=${category.id}`}
-                  class='inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary hover:bg-accent hover:text-accent-foreground'
-                >
-                  <Icon class='size-3.5' aria-hidden='true' />
-                  {category.name}
-                </A>
-              );
-            }}
-          </For>
-        </Show>
+        <For each={QUICK_LINKS}>
+          {(link) => (
+            <A
+              href={link.href}
+              class='inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary hover:bg-accent hover:text-accent-foreground'
+            >
+              <link.icon class='size-3.5' aria-hidden='true' />
+              {link.label}
+            </A>
+          )}
+        </For>
       </nav>
     </header>
   );

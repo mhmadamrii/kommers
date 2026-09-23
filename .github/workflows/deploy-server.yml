@@ -1,0 +1,61 @@
+name: Deploy server
+
+# Only re-deploys packages/server (Go API + notifier). packages/web deploys
+# separately via Cloudflare Pages' own GitHub integration — see
+# docs/deployment-checklist.md §13.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/server/**'
+      - '.github/workflows/deploy-server.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load deploy key into ssh-agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Pin the VPS host key
+        # Without this, ssh silently trusts whatever host key answers on
+        # first connect — pinning it from a secret means a spoofed host
+        # fails closed instead of failing open.
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_HOST_KEY }}" >> ~/.ssh/known_hosts
+
+      - name: Build and restart the server + notifier containers
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          # Path to the repo clone on the VPS (see docs/deployment-checklist.md
+          # §7 — a read-only deploy key, not this repo's checkout). Override
+          # by setting the DEPLOY_PATH repository/environment variable if the
+          # VPS clone lives somewhere else.
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '~/kommers' }}
+        run: |
+          ssh deploy@"$DEPLOY_HOST" "cd '$DEPLOY_PATH' && set -euo pipefail && \
+            git fetch origin main && \
+            git reset --hard origin/main && \
+            podman-compose build server notifier && \
+            podman-compose up -d --force-recreate server notifier && \
+            podman image prune -f"
+
+      - name: Verify the API came back up
+        # server only `expose`s 8080 to the compose network (see
+        # docker-compose.yml), not the VPS host, so this checks the real
+        # public path through Caddy — same one a real client uses — rather
+        # than something reachable only from inside the box.
+        run: |
+          for i in $(seq 1 10); do
+            curl -fsS https://api.kommers.store/healthz && exit 0
+            sleep 3
+          done
+          exit 1

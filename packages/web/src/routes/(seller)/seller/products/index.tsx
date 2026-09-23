@@ -1,18 +1,40 @@
 import { A } from '@solidjs/router';
-import { PackagePlus, PackageSearch } from 'lucide-solid';
-import { For, Show } from 'solid-js';
+import { PackagePlus, PackageSearch, Trash2 } from 'lucide-solid';
+import { createSignal, For, Show } from 'solid-js';
+import { toast } from 'somoto';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Card } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table';
+import { ConfirmDialog } from '~/components/confirm-dialog';
 import { EmptyState } from '~/components/empty-state';
+import { ApiError } from '~/lib/api-client';
 import { formatPriceCents } from '~/lib/currency';
-import { useMyProductsQuery } from '~/queries/products';
+import { useDeleteProductMutation, useMyProductsQuery } from '~/queries/products';
 
 export default function SellerProducts() {
   const productsQuery = useMyProductsQuery();
   const products = () => productsQuery.data ?? [];
+  const [pendingDeleteId, setPendingDeleteId] = createSignal<number | null>(null);
+
+  const deleteProduct = useDeleteProductMutation();
+
+  function confirmDelete() {
+    const id = pendingDeleteId();
+    if (id === null) return;
+
+    deleteProduct.mutate(id, {
+      onSuccess: () => {
+        toast.success('Produk berhasil dihapus.');
+        setPendingDeleteId(null);
+      },
+      onError: (err) => {
+        toast.error(err instanceof ApiError ? err.message : 'Gagal menghapus produk.');
+        setPendingDeleteId(null);
+      },
+    });
+  }
 
   return (
     <div class='flex h-full min-h-0 flex-col gap-6'>
@@ -81,9 +103,20 @@ export default function SellerProducts() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button as={A} href={`/seller/products/${product.id}`} variant='outline' size='sm'>
-                            Kelola
-                          </Button>
+                          <div class='flex justify-end gap-2'>
+                            <Button as={A} href={`/seller/products/${product.id}`} variant='outline' size='sm'>
+                              Kelola
+                            </Button>
+                            <Button
+                              type='button'
+                              variant='destructive'
+                              size='icon-sm'
+                              aria-label='Hapus produk'
+                              onClick={() => setPendingDeleteId(product.id)}
+                            >
+                              <Trash2 class='size-3.5' aria-hidden='true' />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )}
@@ -94,6 +127,17 @@ export default function SellerProducts() {
           </Card>
         </Show>
       </Show>
+
+      <ConfirmDialog
+        open={pendingDeleteId() !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+        title='Hapus produk ini?'
+        description='Produk akan dihapus permanen dan tidak bisa dikembalikan.'
+        confirmLabel='Hapus'
+        variant='destructive'
+        confirming={deleteProduct.isPending}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -262,7 +262,10 @@ export default function Products() {
                 />
               }
             >
-              <div class='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
+              <div
+                class='grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-3 lg:grid-cols-4'
+                classList={{ 'opacity-50': productsQuery.isFetching }}
+              >
                 <For each={products()}>
                   {(product) => <ProductCard product={product} />}
                 </For>

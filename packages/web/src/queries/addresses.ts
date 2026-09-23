@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
-import { apiFetch } from '~/lib/api-client';
+import { apiFetch, canResolveSession } from '~/lib/api-client';
 
 // Matches GET /api/v1/me/addresses' addressResponse exactly
 // (packages/server internal/handler/address.go).
@@ -36,6 +36,7 @@ export function useAddressesQuery() {
   return useQuery(() => ({
     queryKey: ADDRESSES_QUERY_KEY,
     queryFn: () => apiFetch<Address[]>('/api/v1/me/addresses'),
+    enabled: canResolveSession(),
   }));
 }
 

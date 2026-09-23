@@ -1,7 +1,7 @@
 import { useNavigate } from '@solidjs/router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
 import { createEffect } from 'solid-js';
-import { ApiError, apiFetch } from '~/lib/api-client';
+import { ApiError, apiFetch, canResolveSession } from '~/lib/api-client';
 
 export type Role = 'customer' | 'seller' | 'admin';
 
@@ -30,6 +30,9 @@ export function useMeQuery() {
       }
     },
     retry: false,
+    // See canResolveSession: a server render with no cookie would resolve
+    // this to null and that null would outlive the page load.
+    enabled: canResolveSession(),
   }));
 }
 
@@ -40,7 +43,12 @@ export function useRequireRole(...roles: Role[]) {
   const navigate = useNavigate();
   const meQuery = useMeQuery();
   createEffect(() => {
-    if (meQuery.isLoading) return;
+    // isPending, not isLoading: a query that hasn't started fetching yet
+    // (disabled during SSR, or the instant before the hydrated client
+    // observer kicks off its mount fetch) reports isLoading === false while
+    // still having no data, and redirecting on that bounces a logged-in
+    // seller off their own page on every reload.
+    if (meQuery.isPending) return;
     if (!meQuery.data || !roles.includes(meQuery.data.role)) {
       navigate('/');
     }

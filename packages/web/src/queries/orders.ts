@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
 import type { Accessor } from 'solid-js';
-import { apiFetch } from '~/lib/api-client';
+import { apiFetch, canResolveSession } from '~/lib/api-client';
 import type { Address } from '~/queries/addresses';
 import { CART_QUERY_KEY } from '~/queries/cart';
 
@@ -42,6 +42,7 @@ export function useOrdersQuery() {
   return useQuery(() => ({
     queryKey: ORDERS_QUERY_KEY,
     queryFn: () => apiFetch<Order[]>('/api/v1/orders'),
+    enabled: canResolveSession(),
   }));
 }
 
@@ -49,6 +50,7 @@ export function useOrderQuery(id: Accessor<number>) {
   return useQuery(() => ({
     queryKey: ['orders', id()],
     queryFn: () => apiFetch<Order>(`/api/v1/orders/${id()}`),
+    enabled: canResolveSession(),
     // Payment confirmation lands via a Stripe webhook, not this request —
     // poll briefly so "pending" flips to "paid" without a manual refresh.
     refetchInterval: (query) => (query.state.data?.status === 'pending' ? 3000 : false),

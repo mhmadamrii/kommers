@@ -1,6 +1,20 @@
 import { useSearchParams } from '@solidjs/router';
+import { Button } from '~/components/ui/button';
 import { ListFilter, PackageSearch } from 'lucide-solid';
 import { For, Show, createMemo, createSignal } from 'solid-js';
+import { Skeleton } from '~/components/ui/skeleton';
+import { EmptyState } from '~/components/empty-state';
+import { ProductCard } from '~/components/product-card';
+import { categoryIcon } from '~/lib/category-icons';
+import { useCategoriesQuery } from '~/queries/categories';
+import { useProductsQuery } from '~/queries/products';
+
+import {
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui/text-field';
+
 import {
   Drawer,
   DrawerClose,
@@ -9,7 +23,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '~/components/ui/drawer';
-import { Button } from '~/components/ui/button';
+
 import {
   Select,
   SelectContent,
@@ -18,13 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select';
-import { Skeleton } from '~/components/ui/skeleton';
-import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field';
-import { EmptyState } from '~/components/empty-state';
-import { ProductCard } from '~/components/product-card';
-import { categoryIcon } from '~/lib/category-icons';
-import { useCategoriesQuery } from '~/queries/categories';
-import { useProductsQuery } from '~/queries/products';
 
 type SortOption = { value: string; label: string };
 
@@ -44,18 +51,24 @@ export default function Products() {
     Array.isArray(value) ? value[0] : value;
 
   const [categoryId, setCategoryId] = createSignal(
-    searchParams.category_id ? Number(toSingle(searchParams.category_id)) : undefined,
+    searchParams.category_id
+      ? Number(toSingle(searchParams.category_id))
+      : undefined,
   );
   const [minPrice, setMinPrice] = createSignal('');
   const [maxPrice, setMaxPrice] = createSignal('');
   const [sort, setSort] = createSignal<SortOption>(SORT_OPTIONS[0]!);
   const [filterOpen, setFilterOpen] = createSignal(false);
 
-  const query = createMemo(() => (toSingle(searchParams.q) ?? '').trim().toLowerCase());
+  const query = createMemo(() =>
+    (toSingle(searchParams.q) ?? '').trim().toLowerCase(),
+  );
 
   const categoriesQuery = useCategoriesQuery();
   const categories = () => categoriesQuery.data ?? [];
-  const activeCategory = createMemo(() => categories().find((c) => c.id === categoryId()));
+  const activeCategory = createMemo(() =>
+    categories().find((c) => c.id === categoryId()),
+  );
 
   const filters = createMemo(() => ({
     categoryId: categoryId(),
@@ -89,8 +102,10 @@ export default function Products() {
             onClick={() => selectCategory(undefined)}
             class='rounded-md px-2 py-1.5 text-left text-sm transition-colors'
             classList={{
-              'bg-accent text-accent-foreground font-medium': categoryId() === undefined,
-              'text-muted-foreground hover:bg-accent/50': categoryId() !== undefined,
+              'bg-accent text-accent-foreground font-medium':
+                categoryId() === undefined,
+              'text-muted-foreground hover:bg-accent/50':
+                categoryId() !== undefined,
             }}
           >
             Semua Kategori
@@ -104,8 +119,10 @@ export default function Products() {
                   onClick={() => selectCategory(category.id)}
                   class='flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors'
                   classList={{
-                    'bg-accent text-accent-foreground font-medium': categoryId() === category.id,
-                    'text-muted-foreground hover:bg-accent/50': categoryId() !== category.id,
+                    'bg-accent text-accent-foreground font-medium':
+                      categoryId() === category.id,
+                    'text-muted-foreground hover:bg-accent/50':
+                      categoryId() !== category.id,
                   }}
                 >
                   <Icon class='size-4' aria-hidden='true' />
@@ -152,7 +169,10 @@ export default function Products() {
     <div class='flex flex-col gap-6 px-4 py-6 sm:px-6'>
       <div>
         <h1 class='text-xl font-bold text-foreground'>
-          <Show when={query()} fallback={activeCategory()?.name ?? 'Semua Produk'}>
+          <Show
+            when={query()}
+            fallback={activeCategory()?.name ?? 'Semua Produk'}
+          >
             Hasil untuk &ldquo;{toSingle(searchParams.q)}&rdquo;
           </Show>
         </h1>
@@ -201,11 +221,15 @@ export default function Products() {
               value={sort()}
               onChange={(value) => value && setSort(value)}
               itemComponent={(itemProps) => (
-                <SelectItem item={itemProps.item}>{itemProps.item.rawValue.label}</SelectItem>
+                <SelectItem item={itemProps.item}>
+                  {itemProps.item.rawValue.label}
+                </SelectItem>
               )}
             >
               <SelectTrigger>
-                <SelectValue<SortOption>>{(state) => state.selectedOption().label}</SelectValue>
+                <SelectValue<SortOption>>
+                  {(state) => state.selectedOption().label}
+                </SelectValue>
               </SelectTrigger>
               <SelectPortal>
                 <SelectContent />
@@ -239,7 +263,9 @@ export default function Products() {
               }
             >
               <div class='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4'>
-                <For each={products()}>{(product) => <ProductCard product={product} />}</For>
+                <For each={products()}>
+                  {(product) => <ProductCard product={product} />}
+                </For>
               </div>
             </Show>
           </Show>

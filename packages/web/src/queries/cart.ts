@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
-import { apiFetch } from '~/lib/api-client';
+import { apiFetch, canResolveSession } from '~/lib/api-client';
 
 export type CartItem = {
   id: number;
@@ -24,6 +24,7 @@ export function useCartQuery() {
   return useQuery(() => ({
     queryKey: CART_QUERY_KEY,
     queryFn: () => apiFetch<Cart>('/api/v1/cart'),
+    enabled: canResolveSession(),
   }));
 }
 

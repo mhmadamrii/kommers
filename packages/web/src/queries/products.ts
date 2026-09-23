@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
 import type { Accessor } from 'solid-js';
-import { apiFetch } from '~/lib/api-client';
+import { apiFetch, canResolveSession } from '~/lib/api-client';
 
 export type ProductOwner = {
   id: number;
@@ -125,6 +125,7 @@ export function useMyProductsQuery() {
   return useQuery(() => ({
     queryKey: MY_PRODUCTS_QUERY_KEY,
     queryFn: () => apiFetch<Product[]>('/api/v1/me/products'),
+    enabled: canResolveSession(),
   }));
 }
 

@@ -1148,6 +1148,28 @@ paths:
       summary: List the authenticated seller's own products (active and inactive)
       tags:
       - products
+  /api/v1/me/wishlist:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.productResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List the authenticated user's saved products
+      tags:
+      - wishlist
   /api/v1/orders:
     get:
       produces:
@@ -1701,6 +1723,55 @@ paths:
       summary: Stripe webhook receiver (checkout.session.completed / checkout.session.expired)
       tags:
       - orders
+  /api/v1/wishlist/{product_id}:
+    delete:
+      parameters:
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove a product from the authenticated user's wishlist
+      tags:
+      - wishlist
+    post:
+      parameters:
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Save a product to the authenticated user's wishlist
+      tags:
+      - wishlist
   /healthz:
     get:
       produces:

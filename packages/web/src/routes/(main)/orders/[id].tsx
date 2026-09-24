@@ -1,5 +1,5 @@
 import { A, useParams, useSearchParams } from '@solidjs/router';
-import { CheckCircle2, Clock, MapPin, PackageX, XCircle } from 'lucide-solid';
+import { CheckCircle2, Clock, MapPin, PackageCheck, PackageX, Truck, XCircle } from 'lucide-solid';
 import { createMemo, For, Show } from 'solid-js';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
@@ -8,11 +8,33 @@ import { EmptyState } from '~/components/empty-state';
 import { Skeleton } from '~/components/ui/skeleton';
 import { formatPriceCents } from '~/lib/currency';
 import { useOrderQuery } from '~/queries/orders';
+import type { OrderStatus } from '~/queries/orders';
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Menunggu Pembayaran',
   paid: 'Sudah Dibayar',
+  processing: 'Diproses',
+  shipped: 'Dikirim',
+  delivered: 'Selesai',
   cancelled: 'Dibatalkan',
+};
+
+const STATUS_TITLE: Record<OrderStatus, string> = {
+  pending: 'Menunggu Konfirmasi Pembayaran',
+  paid: 'Pembayaran Berhasil',
+  processing: 'Pesanan Sedang Diproses',
+  shipped: 'Pesanan Dalam Pengiriman',
+  delivered: 'Pesanan Selesai',
+  cancelled: 'Pesanan Dibatalkan',
+};
+
+const STATUS_ICON: Record<OrderStatus, typeof CheckCircle2> = {
+  pending: Clock,
+  paid: CheckCircle2,
+  processing: Clock,
+  shipped: Truck,
+  delivered: PackageCheck,
+  cancelled: XCircle,
 };
 
 export default function OrderDetail() {
@@ -40,38 +62,57 @@ export default function OrderDetail() {
           {(order) => (
             <div class='flex flex-col gap-4'>
               <Card class='flex flex-col items-center gap-2 p-6 text-center'>
-                <Show
-                  when={order().status === 'paid'}
-                  fallback={
-                    <Show
-                      when={order().status === 'cancelled'}
-                      fallback={<Clock class='size-10 text-amber-500' aria-hidden='true' />}
-                    >
-                      <XCircle class='size-10 text-destructive' aria-hidden='true' />
-                    </Show>
-                  }
-                >
-                  <CheckCircle2 class='size-10 text-primary' aria-hidden='true' />
-                </Show>
+                {(() => {
+                  const Icon = STATUS_ICON[order().status];
+                  return (
+                    <Icon
+                      class={`size-10 ${
+                        order().status === 'cancelled'
+                          ? 'text-destructive'
+                          : order().status === 'pending'
+                            ? 'text-amber-500'
+                            : 'text-primary'
+                      }`}
+                      aria-hidden='true'
+                    />
+                  );
+                })()}
 
                 <h1 class='text-lg font-bold text-foreground'>
-                  {order().status === 'paid'
-                    ? 'Pembayaran Berhasil'
-                    : order().status === 'cancelled'
-                      ? 'Pesanan Dibatalkan'
-                      : cameFromCancel()
-                        ? 'Pembayaran Dibatalkan'
-                        : 'Menunggu Konfirmasi Pembayaran'}
+                  {order().status === 'pending' && cameFromCancel()
+                    ? 'Pembayaran Dibatalkan'
+                    : STATUS_TITLE[order().status]}
                 </h1>
                 <p class='text-sm text-muted-foreground'>
                   {order().status === 'pending'
                     ? 'Kami akan memperbarui status ini otomatis setelah Stripe mengonfirmasi pembayaranmu.'
                     : `Pesanan #${order().id}`}
                 </p>
-                <Badge variant={order().status === 'paid' ? 'default' : 'secondary'}>
+                <Badge variant={order().status === 'pending' || order().status === 'cancelled' ? 'secondary' : 'default'}>
                   {STATUS_LABEL[order().status] ?? order().status}
                 </Badge>
               </Card>
+
+              <Show when={order().tracking_number || order().courier}>
+                <Card class='flex flex-col gap-2 p-4'>
+                  <h2 class='flex items-center gap-1.5 text-sm font-semibold text-foreground'>
+                    <Truck class='size-4 text-muted-foreground' aria-hidden='true' />
+                    Info Pengiriman
+                  </h2>
+                  <div class='text-sm'>
+                    <Show when={order().courier}>
+                      <p class='text-muted-foreground'>
+                        Kurir: <span class='font-medium text-foreground'>{order().courier}</span>
+                      </p>
+                    </Show>
+                    <Show when={order().tracking_number}>
+                      <p class='text-muted-foreground'>
+                        No. Resi: <span class='font-medium text-foreground'>{order().tracking_number}</span>
+                      </p>
+                    </Show>
+                  </div>
+                </Card>
+              </Show>
 
               <Card class='flex flex-col gap-3 p-4'>
                 <div class='flex items-center justify-between'>

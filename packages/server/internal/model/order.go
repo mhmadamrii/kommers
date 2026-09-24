@@ -1,14 +1,48 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type OrderStatus string
 
 const (
-	OrderStatusPending   OrderStatus = "pending"
-	OrderStatusPaid      OrderStatus = "paid"
-	OrderStatusCancelled OrderStatus = "cancelled"
+	OrderStatusPending    OrderStatus = "pending"
+	OrderStatusPaid       OrderStatus = "paid"
+	OrderStatusProcessing OrderStatus = "processing"
+	OrderStatusShipped    OrderStatus = "shipped"
+	OrderStatusDelivered  OrderStatus = "delivered"
+	OrderStatusCancelled  OrderStatus = "cancelled"
 )
+
+// shippingStatusOrder gives each post-payment status a forward-only rank so
+// a seller can advance an order (paid -> processing -> shipped -> delivered,
+// skipping steps allowed) but never move it backward or off a terminal
+// Cancelled order. Statuses absent from this map (Pending, Cancelled) aren't
+// valid targets for a seller's shipping update.
+var shippingStatusOrder = map[OrderStatus]int{
+	OrderStatusPaid:       0,
+	OrderStatusProcessing: 1,
+	OrderStatusShipped:    2,
+	OrderStatusDelivered:  3,
+}
+
+// CanAdvanceShippingTo reports whether next is a valid forward shipping-status
+// move from the order's current status — used by the seller shipping-update
+// endpoint, not by the buyer-facing lifecycle (payment/cancellation).
+func CanAdvanceShippingTo(current, next OrderStatus) bool {
+	nextRank, ok := shippingStatusOrder[next]
+	if !ok {
+		return false
+	}
+	currentRank, ok := shippingStatusOrder[current]
+	if !ok {
+		return false
+	}
+	return nextRank > currentRank
+}
 
 type PaymentStatus string
 
@@ -36,6 +70,12 @@ type Order struct {
 	Currency   string      `gorm:"size:3;not null;default:idr"`
 	TotalCents int64       `gorm:"not null"`
 	Items      []OrderItem `gorm:"foreignKey:OrderID"`
+	// Shipping fields are seller-entered once Status reaches processing/shipped —
+	// there's no carrier integration, this is a manually-updated tracking record.
+	TrackingNumber string     `gorm:"size:100"`
+	Courier        string     `gorm:"size:100"`
+	ShippedAt      *time.Time
+	DeliveredAt    *time.Time
 }
 
 // OrderItem snapshots product name/price at purchase time so later product

@@ -25,5 +25,6 @@ func Migrate(db *gorm.DB) error {
 		&model.Campaign{},
 		&model.Review{},
 		&model.ReviewImage{},
+		&model.WishlistItem{},
 	)
 }

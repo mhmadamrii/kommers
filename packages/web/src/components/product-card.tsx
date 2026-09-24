@@ -1,11 +1,20 @@
 import { A } from '@solidjs/router';
-import { MapPin, Truck } from 'lucide-solid';
+import { Heart, MapPin, Truck } from 'lucide-solid';
 import { Show } from 'solid-js';
+import { toast } from 'somoto';
 import { Badge } from '~/components/ui/badge';
 import { Card } from '~/components/ui/card';
 import { StarRating } from '~/components/star-rating';
+import { ApiError } from '~/lib/api-client';
 import { formatPriceCents } from '~/lib/currency';
+import { useMeQuery } from '~/queries/auth';
 import { discountPercent, type Product } from '~/queries/products';
+
+import {
+  useAddToWishlistMutation,
+  useIsWishlisted,
+  useRemoveFromWishlistMutation,
+} from '~/queries/wishlist';
 
 const PLACEHOLDER_TONES = [
   'from-primary/15 to-primary/5',
@@ -18,6 +27,35 @@ const PLACEHOLDER_TONES = [
 export function ProductCard(props: { product: Product }) {
   const discount = () => discountPercent(props.product);
   const tone = () => PLACEHOLDER_TONES[props.product.id % PLACEHOLDER_TONES.length];
+
+  const meQuery = useMeQuery();
+  const productId = () => props.product.id;
+  const isWishlisted = useIsWishlisted(productId);
+  const addToWishlist = useAddToWishlistMutation();
+  const removeFromWishlist = useRemoveFromWishlistMutation();
+  const wishlistPending = () => addToWishlist.isPending || removeFromWishlist.isPending;
+
+  function toggleWishlist(e: MouseEvent) {
+    // Card body is a link to the product page — the heart sits on top of
+    // it, so without this the click both toggles the wishlist and
+    // navigates away.
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!meQuery.data) {
+      toast.error('Masuk untuk menyimpan produk ke wishlist.');
+      return;
+    }
+    if (wishlistPending()) return;
+
+    const id = productId();
+    const mutation = isWishlisted() ? removeFromWishlist : addToWishlist;
+    mutation.mutate(id, {
+      onError: (err) => {
+        toast.error(err instanceof ApiError ? err.message : 'Gagal memperbarui wishlist.');
+      },
+    });
+  }
 
   return (
     <Card class='group gap-0 overflow-hidden p-0 transition-shadow hover:shadow-md'>
@@ -37,6 +75,20 @@ export function ProductCard(props: { product: Product }) {
             -{discount()}%
           </Badge>
         </Show>
+        <button
+          type='button'
+          aria-label={isWishlisted() ? 'Hapus dari wishlist' : 'Simpan ke wishlist'}
+          aria-pressed={isWishlisted()}
+          onClick={toggleWishlist}
+          disabled={wishlistPending()}
+          class='absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground backdrop-blur transition-colors hover:text-destructive disabled:opacity-50'
+        >
+          <Heart
+            class='size-4'
+            classList={{ 'fill-destructive text-destructive': isWishlisted() }}
+            aria-hidden='true'
+          />
+        </button>
       </div>
 
       <div class='flex flex-col gap-1.5 p-3'>

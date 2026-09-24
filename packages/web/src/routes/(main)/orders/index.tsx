@@ -11,6 +11,9 @@ import { useOrdersQuery } from '~/queries/orders';
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Menunggu Pembayaran',
   paid: 'Sudah Dibayar',
+  processing: 'Diproses',
+  shipped: 'Dikirim',
+  delivered: 'Selesai',
   cancelled: 'Dibatalkan',
 };
 
@@ -66,7 +69,7 @@ export default function Orders() {
                     <span class='text-sm font-semibold text-foreground'>
                       {formatPriceCents(order.total_cents)}
                     </span>
-                    <Badge variant={order.status === 'paid' ? 'default' : 'secondary'}>
+                    <Badge variant={order.status === 'pending' || order.status === 'cancelled' ? 'secondary' : 'default'}>
                       {STATUS_LABEL[order.status] ?? order.status}
                     </Badge>
                   </div>

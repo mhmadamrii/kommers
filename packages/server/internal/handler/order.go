@@ -95,15 +95,19 @@ type orderItemResponse struct {
 }
 
 type orderResponse struct {
-	ID            uint                `json:"id"`
-	Status        model.OrderStatus   `json:"status"`
-	PaymentStatus model.PaymentStatus `json:"payment_status"`
-	AddressID     uint                `json:"address_id"`
-	Address       *addressResponse    `json:"address,omitempty"`
-	Currency      string              `json:"currency"`
-	TotalCents    int64               `json:"total_cents"`
-	Items         []orderItemResponse `json:"items"`
-	CreatedAt     time.Time           `json:"created_at"`
+	ID             uint                `json:"id"`
+	Status         model.OrderStatus   `json:"status"`
+	PaymentStatus  model.PaymentStatus `json:"payment_status"`
+	AddressID      uint                `json:"address_id"`
+	Address        *addressResponse    `json:"address,omitempty"`
+	Currency       string              `json:"currency"`
+	TotalCents     int64               `json:"total_cents"`
+	Items          []orderItemResponse `json:"items"`
+	TrackingNumber string              `json:"tracking_number,omitempty"`
+	Courier        string              `json:"courier,omitempty"`
+	ShippedAt      *time.Time          `json:"shipped_at,omitempty"`
+	DeliveredAt    *time.Time          `json:"delivered_at,omitempty"`
+	CreatedAt      time.Time           `json:"created_at"`
 }
 
 // checkoutResponse is only returned by Checkout — CheckoutURL is where the
@@ -131,14 +135,18 @@ func (h *OrderHandler) newOrderResponse(o model.Order) orderResponse {
 	}
 
 	res := orderResponse{
-		ID:            o.ID,
-		Status:        o.Status,
-		PaymentStatus: o.PaymentStatus,
-		AddressID:     o.AddressID,
-		Currency:      o.Currency,
-		TotalCents:    o.TotalCents,
-		Items:         items,
-		CreatedAt:     o.CreatedAt,
+		ID:             o.ID,
+		Status:         o.Status,
+		PaymentStatus:  o.PaymentStatus,
+		AddressID:      o.AddressID,
+		Currency:       o.Currency,
+		TotalCents:     o.TotalCents,
+		Items:          items,
+		TrackingNumber: o.TrackingNumber,
+		Courier:        o.Courier,
+		ShippedAt:      o.ShippedAt,
+		DeliveredAt:    o.DeliveredAt,
+		CreatedAt:      o.CreatedAt,
 	}
 	if o.Address.ID != 0 {
 		addr := newAddressResponse(o.Address)
@@ -350,6 +358,23 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	c.JSON(http.StatusCreated, checkoutResponse{orderResponse: h.newOrderResponse(order), CheckoutURL: session.URL})
 }
 
+// isSellerOfOrder reports whether userID owns at least one product among the
+// order's items — admins bypass. Unlike ProductHandler/CampaignHandler's
+// authorizeOwner (a single OwnerID field), Order has no direct seller column:
+// ownership only exists per line item via Item.Product.OwnerID, since one
+// order can in principle span multiple sellers' products.
+func isSellerOfOrder(order model.Order, userID uint, role model.Role) bool {
+	if role == model.RoleAdmin {
+		return true
+	}
+	for _, item := range order.Items {
+		if item.Product.OwnerID == userID {
+			return true
+		}
+	}
+	return false
+}
+
 // restoreStockAndCancel reverses the stock (and campaign stock_used) decrement
 // from a Checkout run and marks the order terminal — used both when payment
 // setup itself fails and when a Stripe session expires unpaid.
@@ -482,6 +507,117 @@ func (h *OrderHandler) GetByID(c *gin.Context) {
 	}
 	if err := query.First(&order, c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "order not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, h.newOrderResponse(order))
+}
+
+// ListForSeller godoc
+//
+//	@Summary	List orders containing at least one of the current seller's products
+//	@Tags		orders
+//	@Security	BearerAuth
+//	@Produce	json
+//	@Success	200	{array}	orderResponse
+//	@Failure	401	{object}	map[string]string
+//	@Router		/api/v1/me/orders/selling [get]
+func (h *OrderHandler) ListForSeller(c *gin.Context) {
+	userID := c.MustGet(middleware.CtxUserID).(uint)
+	role, _ := c.MustGet(middleware.CtxRole).(model.Role)
+
+	var orders []model.Order
+	query := h.DB.Preload("Items.Product.Owner").Preload("Items.Product.Images").Preload("Address").
+		Order("id desc")
+	if role != model.RoleAdmin {
+		// Join is scoped by a subquery on order_items rather than a
+		// preload filter, since preload can't restrict which parent
+		// rows come back — only which children get attached to them.
+		query = query.Where("id IN (?)",
+			h.DB.Table("order_items").
+				Select("order_items.order_id").
+				Joins("JOIN products ON products.id = order_items.product_id").
+				Where("products.owner_id = ? AND order_items.deleted_at IS NULL", userID),
+		)
+	}
+	if err := query.Find(&orders).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	res := make([]orderResponse, len(orders))
+	for i, o := range orders {
+		res[i] = h.newOrderResponse(o)
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+type updateShippingRequest struct {
+	Status         model.OrderStatus `json:"status" binding:"required"`
+	TrackingNumber string            `json:"tracking_number"`
+	Courier        string            `json:"courier"`
+}
+
+// UpdateShipping godoc
+//
+//	@Summary	Advance an order's shipping status (seller-owned products only)
+//	@Tags		orders
+//	@Security	BearerAuth
+//	@Accept		json
+//	@Produce	json
+//	@Param		id		path		int						true	"Order ID"
+//	@Param		request	body		updateShippingRequest	true	"Shipping update payload"
+//	@Success	200		{object}	orderResponse
+//	@Failure	400		{object}	map[string]string
+//	@Failure	401		{object}	map[string]string
+//	@Failure	403		{object}	map[string]string
+//	@Failure	404		{object}	map[string]string
+//	@Router		/api/v1/orders/{id}/shipping [patch]
+func (h *OrderHandler) UpdateShipping(c *gin.Context) {
+	userID := c.MustGet(middleware.CtxUserID).(uint)
+	role, _ := c.MustGet(middleware.CtxRole).(model.Role)
+
+	var req updateShippingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var order model.Order
+	if err := h.DB.Preload("Items.Product.Owner").Preload("Items.Product.Images").Preload("Address").
+		First(&order, c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "order not found"})
+		return
+	}
+
+	if !isSellerOfOrder(order, userID, role) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you do not sell any product in this order"})
+		return
+	}
+
+	if !model.CanAdvanceShippingTo(order.Status, req.Status) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot move order from " + string(order.Status) + " to " + string(req.Status)})
+		return
+	}
+
+	order.Status = req.Status
+	if req.TrackingNumber != "" {
+		order.TrackingNumber = req.TrackingNumber
+	}
+	if req.Courier != "" {
+		order.Courier = req.Courier
+	}
+	now := time.Now()
+	if req.Status == model.OrderStatusShipped && order.ShippedAt == nil {
+		order.ShippedAt = &now
+	}
+	if req.Status == model.OrderStatusDelivered && order.DeliveredAt == nil {
+		order.DeliveredAt = &now
+	}
+
+	if err := h.DB.Save(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 		return
 	}
 

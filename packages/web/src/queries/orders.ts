@@ -4,7 +4,7 @@ import { apiFetch, canResolveSession } from '~/lib/api-client';
 import type { Address } from '~/queries/addresses';
 import { CART_QUERY_KEY } from '~/queries/cart';
 
-export type OrderStatus = 'pending' | 'paid' | 'cancelled';
+export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
 
 export type OrderItem = {
@@ -31,6 +31,10 @@ export type Order = {
   currency: string;
   total_cents: number;
   items: OrderItem[];
+  tracking_number?: string;
+  courier?: string;
+  shipped_at?: string;
+  delivered_at?: string;
   created_at: string;
 };
 

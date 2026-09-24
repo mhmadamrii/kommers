@@ -42,6 +42,7 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 	orderHandler := handler.NewOrderHandler(db, events, stripeClient, cfg.StripeWebhookSecret, cfg.FrontendURL, cfg.S3PublicURL, cfg.S3Bucket)
 	campaignHandler := handler.NewCampaignHandler(db)
 	reviewHandler := handler.NewReviewHandler(db, storageClient, cfg.S3PublicURL, cfg.S3Bucket)
+	wishlistHandler := handler.NewWishlistHandler(db, productHandler)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -135,6 +136,21 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 			}
 
 			me.GET("/products", productHandler.ListMine)
+			me.GET("/wishlist", wishlistHandler.List)
+			me.GET("/orders/selling", middleware.RequireRole(model.RoleAdmin, model.RoleSeller), orderHandler.ListForSeller)
+		}
+
+		// Its own top-level group rather than nested under /products: the
+		// existing /products POST and DELETE trees already commit to :id at
+		// this path position (image upload/delete, owner mutations) — Gin
+		// panics at boot if two routes at the same tree position use
+		// different wildcard names, so a separate group sidesteps that
+		// entirely instead of having to match :id everywhere.
+		wishlist := v1.Group("/wishlist")
+		wishlist.Use(middleware.RequireAuth(jwtSecret))
+		{
+			wishlist.POST("/:product_id", wishlistHandler.Add)
+			wishlist.DELETE("/:product_id", wishlistHandler.Remove)
 		}
 
 		checkout := v1.Group("/checkout")
@@ -150,6 +166,7 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 		{
 			orders.GET("", orderHandler.List)
 			orders.GET("/:id", orderHandler.GetByID)
+			orders.PATCH("/:id/shipping", middleware.RequireRole(model.RoleAdmin, model.RoleSeller), orderHandler.UpdateShipping)
 		}
 
 		// Merchant-only: no public campaign browsing endpoint — buyers only

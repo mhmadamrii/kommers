@@ -1,13 +1,24 @@
 import { A, useParams, useSearchParams } from '@solidjs/router';
-import { CheckCircle2, Clock, MapPin, PackageCheck, PackageX, Truck, XCircle } from 'lucide-solid';
+import {
+  CheckCircle2,
+  Clock,
+  ImageOff,
+  MapPin,
+  PackageCheck,
+  PackageX,
+  Truck,
+  XCircle,
+} from 'lucide-solid';
 import { createMemo, For, Show } from 'solid-js';
+import { toast } from 'somoto';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Card } from '~/components/ui/card';
 import { EmptyState } from '~/components/empty-state';
 import { Skeleton } from '~/components/ui/skeleton';
+import { ApiError } from '~/lib/api-client';
 import { formatPriceCents } from '~/lib/currency';
-import { useOrderQuery } from '~/queries/orders';
+import { useOrderQuery, useRetryPaymentMutation } from '~/queries/orders';
 import type { OrderStatus } from '~/queries/orders';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -42,8 +53,27 @@ export default function OrderDetail() {
   const [searchParams] = useSearchParams();
   const orderId = createMemo(() => Number(params.id));
   const orderQuery = useOrderQuery(orderId);
+  const retryPayment = useRetryPaymentMutation();
 
   const cameFromCancel = () => searchParams.payment === 'cancelled';
+
+  // A cancelled order (session expired, or the earlier session simply never
+  // got created) always needs a fresh attempt. A still-pending order only
+  // gets the button once the buyer has actually bailed out of Stripe once
+  // already — otherwise every ordinary "awaiting payment" view would show it.
+  const canRetryPayment = (order: { status: OrderStatus }) =>
+    order.status === 'cancelled' || (order.status === 'pending' && cameFromCancel());
+
+  function handleRetryPayment(orderId: number) {
+    retryPayment.mutate(orderId, {
+      onSuccess: (result) => {
+        window.location.href = result.checkout_url;
+      },
+      onError: (err) => {
+        toast.error(err instanceof ApiError ? err.message : 'Gagal memulai pembayaran ulang.');
+      },
+    });
+  }
 
   return (
     <div class='mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-6 sm:px-6'>
@@ -91,6 +121,16 @@ export default function OrderDetail() {
                 <Badge variant={order().status === 'pending' || order().status === 'cancelled' ? 'secondary' : 'default'}>
                   {STATUS_LABEL[order().status] ?? order().status}
                 </Badge>
+
+                <Show when={canRetryPayment(order())}>
+                  <Button
+                    class='mt-2 w-full'
+                    disabled={retryPayment.isPending}
+                    onClick={() => handleRetryPayment(order().id)}
+                  >
+                    {retryPayment.isPending ? 'Menyiapkan pembayaran…' : 'Bayar Sekarang'}
+                  </Button>
+                </Show>
               </Card>
 
               <Show when={order().tracking_number || order().courier}>
@@ -131,8 +171,11 @@ export default function OrderDetail() {
                   <For each={order().items}>
                     {(item) => (
                       <div class='flex items-center gap-3 py-3 first:pt-0'>
-                        <div class='size-12 shrink-0 overflow-hidden rounded-lg bg-accent'>
-                          <Show when={item.image_url}>
+                        <div class='flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-accent'>
+                          <Show
+                            when={item.image_url}
+                            fallback={<ImageOff class='size-5 text-muted-foreground' aria-hidden='true' />}
+                          >
                             <img src={item.image_url} alt='' class='size-full object-cover' />
                           </Show>
                         </div>

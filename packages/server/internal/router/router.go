@@ -166,6 +166,7 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 		{
 			orders.GET("", orderHandler.List)
 			orders.GET("/:id", orderHandler.GetByID)
+			orders.POST("/:id/retry-payment", orderHandler.RetryPayment)
 			orders.PATCH("/:id/shipping", middleware.RequireRole(model.RoleAdmin, model.RoleSeller), orderHandler.UpdateShipping)
 		}
 

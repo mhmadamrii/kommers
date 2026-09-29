@@ -76,3 +76,18 @@ export function useCheckoutMutation() {
     },
   }));
 }
+
+// Matches POST /api/v1/orders/{id}/retry-payment — opens a fresh Stripe
+// Checkout Session for an order whose payment never went through (session
+// expired, or the buyer bailed out of the previous Stripe page).
+export function useRetryPaymentMutation() {
+  const queryClient = useQueryClient();
+  return useMutation(() => ({
+    mutationFn: (orderId: number) =>
+      apiFetch<CheckoutResult>(`/api/v1/orders/${orderId}/retry-payment`, { method: 'POST' }),
+    onSuccess: (order) => {
+      queryClient.invalidateQueries({ queryKey: ['orders', order.id] });
+      queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY });
+    },
+  }));
+}

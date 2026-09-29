@@ -358,6 +358,120 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	c.JSON(http.StatusCreated, checkoutResponse{orderResponse: h.newOrderResponse(order), CheckoutURL: session.URL})
 }
 
+// RetryPayment godoc
+//
+//	@Summary	Start a new Stripe Checkout Session for an order whose payment was never completed
+//	@Tags		orders
+//	@Security	BearerAuth
+//	@Produce	json
+//	@Param		id	path		int	true	"Order ID"
+//	@Success	200	{object}	checkoutResponse
+//	@Failure	401	{object}	map[string]string
+//	@Failure	404	{object}	map[string]string
+//	@Failure	409	{object}	map[string]string
+//	@Failure	502	{object}	map[string]string
+//	@Failure	503	{object}	map[string]string
+//	@Router		/api/v1/orders/{id}/retry-payment [post]
+func (h *OrderHandler) RetryPayment(c *gin.Context) {
+	userID := c.MustGet(middleware.CtxUserID).(uint)
+
+	var order model.Order
+	if err := h.DB.Preload("Items.Product.Owner").Preload("Items.Product.Images").Preload("Address").
+		Where("user_id = ?", userID).First(&order, c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "order not found"})
+		return
+	}
+
+	if order.PaymentStatus == model.PaymentStatusPaid {
+		c.JSON(http.StatusConflict, gin.H{"error": "order is already paid"})
+		return
+	}
+	if order.Status != model.OrderStatusPending && order.Status != model.OrderStatusCancelled {
+		c.JSON(http.StatusConflict, gin.H{"error": "order can no longer be paid"})
+		return
+	}
+
+	if h.Stripe == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "payment processing unavailable"})
+		return
+	}
+
+	// A cancelled order already had its stock (and campaign stock_used)
+	// restored by restoreStockAndCancel — either the original session
+	// creation failed, or a webhook reported the Stripe session expired.
+	// Retrying re-runs that same reservation against the order's existing
+	// items (not the cart, which is long gone) before a new session opens.
+	reactivated := order.Status == model.OrderStatusCancelled
+	if reactivated {
+		err := h.DB.Transaction(func(tx *gorm.DB) error {
+			for _, item := range order.Items {
+				var product model.Product
+				if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&product, item.ProductID).Error; err != nil {
+					return errors.New("product not found: " + item.ProductName)
+				}
+				if product.Stock < item.Quantity {
+					return errors.New("insufficient stock for " + item.ProductName)
+				}
+				product.Stock -= item.Quantity
+				if err := tx.Save(&product).Error; err != nil {
+					return err
+				}
+				if item.CampaignID != nil {
+					if err := tx.Model(&model.Campaign{}).Where("id = ?", *item.CampaignID).
+						UpdateColumn("stock_used", gorm.Expr("stock_used + ?", item.Quantity)).Error; err != nil {
+						return err
+					}
+				}
+			}
+			return tx.Model(&model.Order{}).Where("id = ?", order.ID).
+				Updates(map[string]interface{}{"status": model.OrderStatusPending, "payment_status": model.PaymentStatusPending}).Error
+		})
+		if err != nil {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		order.Status = model.OrderStatusPending
+		order.PaymentStatus = model.PaymentStatusPending
+	}
+
+	lineItems := make([]payment.CheckoutLineItem, len(order.Items))
+	for i, item := range order.Items {
+		lineItems[i] = payment.CheckoutLineItem{
+			Name:       item.ProductName,
+			UnitAmount: item.PriceCents,
+			Quantity:   int64(item.Quantity),
+		}
+	}
+
+	successURL := fmt.Sprintf("%s/orders/%d?payment=success", h.FrontendURL, order.ID)
+	cancelURL := fmt.Sprintf("%s/orders/%d?payment=cancelled", h.FrontendURL, order.ID)
+
+	session, currencyUsed, err := h.Stripe.CreateCheckoutSessionWithFallback(
+		c.Request.Context(), "idr", "usd", lineItems, successURL, cancelURL,
+		map[string]string{"order_id": strconv.FormatUint(uint64(order.ID), 10)},
+	)
+	if err != nil {
+		slog.Error("retry stripe checkout session failed", "order_id", order.ID, "error", err)
+		if reactivated {
+			if rbErr := h.restoreStockAndCancel(order, model.OrderStatusCancelled, model.PaymentStatusFailed); rbErr != nil {
+				slog.Error("restore stock after retry session failure failed", "order_id", order.ID, "error", rbErr)
+			}
+		}
+		c.JSON(http.StatusBadGateway, gin.H{"error": "failed to start payment: " + err.Error()})
+		return
+	}
+
+	order.PaymentProvider = "stripe"
+	order.PaymentRef = session.ID
+	order.Currency = currencyUsed
+	if err := h.DB.Save(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, checkoutResponse{orderResponse: h.newOrderResponse(order), CheckoutURL: session.URL})
+}
+
 // isSellerOfOrder reports whether userID owns at least one product among the
 // order's items — admins bypass. Unlike ProductHandler/CampaignHandler's
 // authorizeOwner (a single OwnerID field), Order has no direct seller column:

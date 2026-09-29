@@ -1009,6 +1009,42 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/me/orders/selling": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "List orders containing at least one of the current seller's products",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_handler.orderResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/me/products": {
             "get": {
                 "security": [
@@ -1140,6 +1176,165 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/{id}/retry-payment": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Start a new Stripe Checkout Session for an order whose payment was never completed",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.checkoutResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/{id}/shipping": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Advance an order's shipping status (seller-owned products only)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Shipping update payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.updateShippingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.orderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2074,11 +2269,17 @@ const docTemplate = `{
             "enum": [
                 "pending",
                 "paid",
+                "processing",
+                "shipped",
+                "delivered",
                 "cancelled"
             ],
             "x-enum-varnames": [
                 "OrderStatusPending",
                 "OrderStatusPaid",
+                "OrderStatusProcessing",
+                "OrderStatusShipped",
+                "OrderStatusDelivered",
                 "OrderStatusCancelled"
             ]
         },
@@ -2418,10 +2619,16 @@ const docTemplate = `{
                 "checkout_url": {
                     "type": "string"
                 },
+                "courier": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
                 "currency": {
+                    "type": "string"
+                },
+                "delivered_at": {
                     "type": "string"
                 },
                 "id": {
@@ -2436,11 +2643,17 @@ const docTemplate = `{
                 "payment_status": {
                     "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.PaymentStatus"
                 },
+                "shipped_at": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.OrderStatus"
                 },
                 "total_cents": {
                     "type": "integer"
+                },
+                "tracking_number": {
+                    "type": "string"
                 }
             }
         },
@@ -2503,10 +2716,16 @@ const docTemplate = `{
                 "address_id": {
                     "type": "integer"
                 },
+                "courier": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
                 "currency": {
+                    "type": "string"
+                },
+                "delivered_at": {
                     "type": "string"
                 },
                 "id": {
@@ -2521,11 +2740,17 @@ const docTemplate = `{
                 "payment_status": {
                     "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.PaymentStatus"
                 },
+                "shipped_at": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.OrderStatus"
                 },
                 "total_cents": {
                     "type": "integer"
+                },
+                "tracking_number": {
+                    "type": "string"
                 }
             }
         },
@@ -2767,6 +2992,23 @@ const docTemplate = `{
             ],
             "properties": {
                 "full_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.updateShippingRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "courier": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.OrderStatus"
+                },
+                "tracking_number": {
                     "type": "string"
                 }
             }

@@ -1,4 +1,4 @@
-import { A, useParams } from '@solidjs/router';
+import { A, useNavigate, useParams } from '@solidjs/router';
 import { MapPin, Minus, PackageX, Plus, ShoppingCart, Truck } from 'lucide-solid';
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { toast } from 'somoto';
@@ -16,6 +16,7 @@ import { useCategoriesQuery } from '~/queries/categories';
 import { discountPercent, useProductQuery } from '~/queries/products';
 
 export default function ProductDetail() {
+  const navigate = useNavigate();
   const params = useParams();
   const productQuery = useProductQuery(() => params.slug ?? '');
   const categoriesQuery = useCategoriesQuery();
@@ -39,6 +40,10 @@ export default function ProductDetail() {
   });
 
   const addToCart = useAddCartItemMutation();
+  // Separate mutation instance from addToCart, not a shared one — each
+  // useMutation call tracks its own isPending, so the two buttons don't
+  // both flip to a loading state when only one was clicked.
+  const buyNow = useAddCartItemMutation();
 
   function handleAddToCart() {
     const p = product();
@@ -49,6 +54,23 @@ export default function ProductDetail() {
         onSuccess: () => toast.success('Ditambahkan ke keranjang.'),
         onError: (err) => {
           toast.error(err instanceof ApiError ? err.message : 'Gagal menambahkan ke keranjang.');
+        },
+      },
+    );
+  }
+
+  // No standalone "buy now" endpoint exists — Checkout always converts the
+  // whole cart into an order. This adds the item then goes straight to
+  // /checkout, same as the real flow just skipped past the cart page.
+  function handleBuyNow() {
+    const p = product();
+    if (!p) return;
+    buyNow.mutate(
+      { product_id: p.id, quantity: quantity() },
+      {
+        onSuccess: () => navigate('/checkout'),
+        onError: (err) => {
+          toast.error(err instanceof ApiError ? err.message : 'Gagal memproses pesanan.');
         },
       },
     );
@@ -249,7 +271,8 @@ export default function ProductDetail() {
 
                     <Button
                       class='w-full gap-2'
-                      disabled={p().stock === 0 || addToCart.isPending}
+                      variant='outline'
+                      disabled={p().stock === 0 || addToCart.isPending || buyNow.isPending}
                       onClick={handleAddToCart}
                     >
                       <ShoppingCart class='size-4' aria-hidden='true' />
@@ -258,6 +281,18 @@ export default function ProductDetail() {
                         : addToCart.isPending
                           ? 'Menambahkan...'
                           : 'Tambah ke Keranjang'}
+                    </Button>
+
+                    <Button
+                      class='w-full gap-2'
+                      disabled={p().stock === 0 || addToCart.isPending || buyNow.isPending}
+                      onClick={handleBuyNow}
+                    >
+                      {p().stock === 0
+                        ? 'Stok Habis'
+                        : buyNow.isPending
+                          ? 'Memproses...'
+                          : 'Beli Sekarang'}
                     </Button>
                   </Card>
                 </div>

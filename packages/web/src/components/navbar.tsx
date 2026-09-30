@@ -1,13 +1,18 @@
 import { A, useNavigate } from '@solidjs/router';
-import { Flame, Heart, LogOut, MapPin, Package, Search, Store, Ticket, TrendingUp, User } from 'lucide-solid';
-import { For, Show, createSignal } from 'solid-js';
+import { keepPreviousData, useQuery } from '@tanstack/solid-query';
+import { Flame, Heart, LogOut, MapPin, Package, PackageSearch, Search, Store, Ticket, TrendingUp, User } from 'lucide-solid';
+import { createEffect, createSignal, For, onCleanup, Show } from 'solid-js';
 import { toast } from 'somoto';
 import { Button } from '~/components/ui/button';
 import { CartDrawer } from '~/components/cart-drawer';
 import { LoginDialog } from '~/components/login-dialog';
 import { SellerApplyDialog } from '~/components/seller-apply-dialog';
+import { Skeleton } from '~/components/ui/skeleton';
 import { TextField, TextFieldInput } from '~/components/ui/text-field';
+import { apiFetch } from '~/lib/api-client';
+import { formatPriceCents } from '~/lib/currency';
 import { useLogoutMutation, useMeQuery } from '~/queries/auth';
+import type { Product } from '~/queries/products';
 
 import {
   DropdownMenu,
@@ -16,6 +21,8 @@ import {
   DropdownMenuPortal,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown';
+
+import { Popover, PopoverAnchor, PopoverContent, PopoverPortal } from '~/components/ui/popover';
 
 // Static marketing shortcuts, not category data — some of these routes
 // don't exist yet (/flash-sale, /vouchers). They're placeholders for pages
@@ -31,7 +38,31 @@ export function Navbar() {
   const meQuery = useMeQuery();
   const logout = useLogoutMutation();
   const [searchValue, setSearchValue] = createSignal('');
+  const [debouncedSearch, setDebouncedSearch] = createSignal('');
+  const [searchOpen, setSearchOpen] = createSignal(false);
   const [sellerDialogOpen, setSellerDialogOpen] = createSignal(false);
+
+  // Debounce the suggestions fetch, not the input itself — searchValue stays
+  // in sync with every keystroke so the field never feels laggy.
+  createEffect(() => {
+    const value = searchValue();
+    const timer = setTimeout(() => setDebouncedSearch(value), 250);
+    onCleanup(() => clearTimeout(timer));
+  });
+
+  const suggestionsQuery = useQuery(() => ({
+    queryKey: ['products', 'search-suggestions', debouncedSearch().trim().toLowerCase()],
+    queryFn: () =>
+      apiFetch<Product[]>(`/api/v1/products?q=${encodeURIComponent(debouncedSearch().trim())}&limit=6`),
+    enabled: debouncedSearch().trim().length > 0,
+    placeholderData: keepPreviousData,
+  }));
+
+  function goToSearchResults() {
+    const value = searchValue().trim();
+    setSearchOpen(false);
+    navigate(value ? `/products?q=${encodeURIComponent(value)}` : '/products');
+  }
 
   function handleLogout() {
     logout.mutate(undefined, {
@@ -53,30 +84,99 @@ export function Navbar() {
           kommers
         </A>
 
-        <form
-          class='w-full max-w-3xl flex-1'
-          onSubmit={(e) => {
-            e.preventDefault();
-            const value = searchValue().trim();
-            navigate(value ? `/products?q=${encodeURIComponent(value)}` : '/products');
-          }}
-        >
-          <TextField class='w-full'>
-            <div class='relative'>
-              <Search
-                class='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
-                aria-hidden='true'
-              />
-              <TextFieldInput
-                type='search'
-                placeholder='Cari produk, brand, dan lainnya'
-                class='h-10 rounded-full pl-9'
-                value={searchValue()}
-                onInput={(e) => setSearchValue(e.currentTarget.value)}
-              />
-            </div>
-          </TextField>
-        </form>
+        <Popover open={searchOpen()} onOpenChange={setSearchOpen} placement='bottom-start'>
+          <PopoverAnchor as='div' class='w-full max-w-3xl flex-1'>
+            <form
+              class='w-full'
+              onSubmit={(e) => {
+                e.preventDefault();
+                goToSearchResults();
+              }}
+            >
+              <TextField class='w-full'>
+                <div class='relative'>
+                  <Search
+                    class='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground'
+                    aria-hidden='true'
+                  />
+                  <TextFieldInput
+                    type='search'
+                    placeholder='Cari produk, brand, dan lainnya'
+                    class='h-10 rounded-full pl-9'
+                    value={searchValue()}
+                    onInput={(e) => {
+                      const value = e.currentTarget.value;
+                      setSearchValue(value);
+                      setSearchOpen(value.trim().length > 0);
+                    }}
+                    onFocus={() => {
+                      if (searchValue().trim().length > 0) setSearchOpen(true);
+                    }}
+                  />
+                </div>
+              </TextField>
+            </form>
+          </PopoverAnchor>
+
+          <PopoverPortal>
+            <PopoverContent
+              class='w-[min(36rem,90vw)] p-2'
+              onOpenAutoFocus={(e) => e.preventDefault()}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <Show
+                when={!suggestionsQuery.isLoading}
+                fallback={
+                  <div class='flex flex-col gap-2 p-2'>
+                    <For each={Array(3).fill(0)}>{() => <Skeleton class='h-12 w-full rounded-lg' />}</For>
+                  </div>
+                }
+              >
+                <Show
+                  when={(suggestionsQuery.data ?? []).length > 0}
+                  fallback={
+                    <div class='flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground'>
+                      <PackageSearch class='size-6' aria-hidden='true' />
+                      Produk tidak ditemukan
+                    </div>
+                  }
+                >
+                  <div class='flex flex-col'>
+                    <For each={suggestionsQuery.data}>
+                      {(product) => (
+                        <A
+                          href={`/products/${product.slug}`}
+                          onClick={() => setSearchOpen(false)}
+                          class='flex items-center gap-3 rounded-md p-2 text-sm hover:bg-accent'
+                        >
+                          <div class='size-10 shrink-0 overflow-hidden rounded-md bg-accent'>
+                            <Show when={product.images[0]}>
+                              {(image) => <img src={image().url} alt='' class='size-full object-cover' />}
+                            </Show>
+                          </div>
+                          <div class='flex min-w-0 flex-1 flex-col'>
+                            <span class='line-clamp-1 font-medium text-foreground'>{product.name}</span>
+                            <span class='text-xs text-muted-foreground'>
+                              {formatPriceCents(product.effective_price_cents)}
+                            </span>
+                          </div>
+                        </A>
+                      )}
+                    </For>
+                  </div>
+
+                  <button
+                    type='button'
+                    onClick={goToSearchResults}
+                    class='mt-1 w-full rounded-md p-2 text-center text-sm font-medium text-primary hover:bg-accent'
+                  >
+                    Lihat semua hasil untuk &ldquo;{searchValue().trim()}&rdquo;
+                  </button>
+                </Show>
+              </Show>
+            </PopoverContent>
+          </PopoverPortal>
+        </Popover>
 
         <div class='ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3'>
           <div class='hidden items-center gap-1 text-xs text-muted-foreground lg:flex'>

@@ -184,7 +184,11 @@ export default function Products() {
       </div>
 
       <div class='flex gap-6'>
-        <aside class='hidden w-56 shrink-0 sm:block'>
+        {/* self-start: the parent flex row stretches children by default,
+            which breaks position:sticky (it needs the item shorter than
+            its track). top-28 clears Navbar's sticky header (search row +
+            quick-links row, ~100px) plus a little breathing room. */}
+        <aside class='sticky top-28 hidden max-h-[calc(100vh-8rem)] w-56 shrink-0 self-start overflow-y-auto sm:block'>
           <FilterPanel />
         </aside>
 
@@ -214,7 +218,7 @@ export default function Products() {
             </Drawer>
 
             <Select<SortOption>
-              class='ml-auto w-48'
+              class='ml-auto w-64'
               options={SORT_OPTIONS}
               optionValue='value'
               optionTextValue='label'
@@ -226,7 +230,7 @@ export default function Products() {
                 </SelectItem>
               )}
             >
-              <SelectTrigger>
+              <SelectTrigger class='!h-11 w-full'>
                 <SelectValue<SortOption>>
                   {(state) => state.selectedOption().label}
                 </SelectValue>

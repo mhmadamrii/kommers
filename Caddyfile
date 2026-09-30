@@ -7,3 +7,15 @@ api.kommers.store {
 s3.kommers.store {
 	reverse_proxy minio:9000
 }
+
+api.yappers.online {
+    reverse_proxy yapper_server:3000
+}
+
+media.yappers.online {
+    reverse_proxy yapper_imgproxy:8080
+}
+
+s3.yappers.online {
+    reverse_proxy minio:9000
+}

@@ -23,7 +23,7 @@ services:
     environment:
       MINIO_ROOT_USER: kommers
       MINIO_ROOT_PASSWORD: kommers123
-      MINIO_API_CORS_ALLOW_ORIGIN: https://yappers.online
+      MINIO_API_CORS_ALLOW_ORIGIN: https://yappers.online,http://localhost:3001
     ports:
       - '9000:9000' # S3 API
       - '9001:9001' # console

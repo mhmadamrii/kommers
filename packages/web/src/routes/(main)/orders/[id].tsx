@@ -57,12 +57,11 @@ export default function OrderDetail() {
 
   const cameFromCancel = () => searchParams.payment === 'cancelled';
 
-  // A cancelled order (session expired, or the earlier session simply never
-  // got created) always needs a fresh attempt. A still-pending order only
-  // gets the button once the buyer has actually bailed out of Stripe once
-  // already — otherwise every ordinary "awaiting payment" view would show it.
+  // Any unpaid order can be paid again. A failed card attempt leaves the
+  // Stripe session open and the order "pending" with no cancel redirect, so
+  // gating on ?payment=cancelled left buyers stuck with nothing to click.
   const canRetryPayment = (order: { status: OrderStatus }) =>
-    order.status === 'cancelled' || (order.status === 'pending' && cameFromCancel());
+    order.status === 'cancelled' || order.status === 'pending';
 
   function handleRetryPayment(orderId: number) {
     retryPayment.mutate(orderId, {

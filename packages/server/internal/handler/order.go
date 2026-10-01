@@ -531,7 +531,12 @@ func (h *OrderHandler) StripeWebhook(c *gin.Context) {
 		return
 	}
 
-	evt, err := webhook.ConstructEvent(payloadBytes, c.GetHeader("Stripe-Signature"), h.StripeWebhookSecret)
+	// The dashboard only offers 2020-08-27 and the newest API version for new
+	// destinations, never the one stripe-go v82 pins (2025-08-27.basil), so the
+	// version check would reject every event. The signature is still verified;
+	// we only read stable CheckoutSession fields (id, metadata, payment_status).
+	evt, err := webhook.ConstructEventWithOptions(payloadBytes, c.GetHeader("Stripe-Signature"), h.StripeWebhookSecret,
+		webhook.ConstructEventOptions{IgnoreAPIVersionMismatch: true})
 	if err != nil {
 		slog.Error("stripe webhook signature verification failed", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid signature"})

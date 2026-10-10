@@ -24,9 +24,8 @@ import {
 
 import { Popover, PopoverAnchor, PopoverContent, PopoverPortal } from '~/components/ui/popover';
 
-// Static marketing shortcuts, not category data — some of these routes
-// don't exist yet (/flash-sale, /vouchers). They're placeholders for pages
-// to be built later, deliberately not wired to any query.
+// Static marketing shortcuts, not category data — deliberately not wired to
+// any query.
 const QUICK_LINKS = [
   { label: 'Flash Sale', href: '/flash-sale', icon: Flame },
   { label: 'Produk Terbaru', href: '/products?sort=newest', icon: TrendingUp },

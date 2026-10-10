@@ -3,6 +3,7 @@ import type { Accessor } from 'solid-js';
 import { apiFetch, canResolveSession } from '~/lib/api-client';
 import type { Address } from '~/queries/addresses';
 import { CART_QUERY_KEY } from '~/queries/cart';
+import { VOUCHERS_QUERY_KEY } from '~/queries/vouchers';
 
 export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
@@ -30,6 +31,10 @@ export type Order = {
   address?: Address;
   currency: string;
   total_cents: number;
+  // Voucher discount already subtracted from total_cents; items' subtotals
+  // still sum to the pre-voucher amount.
+  voucher_code?: string;
+  discount_cents: number;
   items: OrderItem[];
   tracking_number?: string;
   courier?: string;
@@ -64,12 +69,13 @@ export function useOrderQuery(id: Accessor<number>) {
 export function useCheckoutMutation() {
   const queryClient = useQueryClient();
   return useMutation(() => ({
-    mutationFn: (addressId: number) =>
+    mutationFn: (input: { addressId: number; voucherCode?: string }) =>
       apiFetch<CheckoutResult>('/api/v1/checkout', {
         method: 'POST',
-        body: JSON.stringify({ address_id: addressId }),
+        body: JSON.stringify({ address_id: input.addressId, voucher_code: input.voucherCode }),
       }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: VOUCHERS_QUERY_KEY });
       queryClient.setQueryData(CART_QUERY_KEY, undefined);
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ORDERS_QUERY_KEY });

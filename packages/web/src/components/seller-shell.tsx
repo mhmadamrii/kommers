@@ -1,5 +1,5 @@
 import { A, useLocation } from '@solidjs/router';
-import { LayoutDashboard, LogOut, Package, Truck, TrendingUp } from 'lucide-solid';
+import { LayoutDashboard, LogOut, Package, Ticket, TrendingUp, Truck, Zap } from 'lucide-solid';
 import { For, type JSX } from 'solid-js';
 import { toast } from 'somoto';
 import { Button } from '~/components/ui/button';
@@ -18,6 +18,8 @@ const NAV_ITEMS = [
   { href: '/seller', label: 'Dashboard', icon: LayoutDashboard, exact: true, comingSoon: false },
   { href: '/seller/products', label: 'Produk', icon: Package, exact: false, comingSoon: false },
   { href: '/seller/orders', label: 'Pesanan', icon: Truck, exact: false, comingSoon: false },
+  { href: '/seller/campaigns', label: 'Flash Sale', icon: Zap, exact: false, comingSoon: false },
+  { href: '/seller/vouchers', label: 'Voucher', icon: Ticket, exact: false, comingSoon: false },
   { href: '/seller/analytics', label: 'Analitik', icon: TrendingUp, exact: false, comingSoon: true },
 ] as const;
 

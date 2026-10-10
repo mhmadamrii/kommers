@@ -35,10 +35,11 @@ func (s *StripeClient) CreateCheckoutSessionWithFallback(
 	ctx context.Context,
 	preferredCurrency, fallbackCurrency string,
 	items []CheckoutLineItem,
+	discountCents int64,
 	successURL, cancelURL string,
 	metadata map[string]string,
 ) (session *stripe.CheckoutSession, currencyUsed string, err error) {
-	session, err = s.createCheckoutSession(ctx, preferredCurrency, items, successURL, cancelURL, metadata)
+	session, err = s.createCheckoutSession(ctx, preferredCurrency, items, discountCents, successURL, cancelURL, metadata)
 	if err == nil {
 		return session, preferredCurrency, nil
 	}
@@ -46,7 +47,7 @@ func (s *StripeClient) CreateCheckoutSessionWithFallback(
 		return nil, "", err
 	}
 
-	session, err = s.createCheckoutSession(ctx, fallbackCurrency, items, successURL, cancelURL, metadata)
+	session, err = s.createCheckoutSession(ctx, fallbackCurrency, items, discountCents, successURL, cancelURL, metadata)
 	if err != nil {
 		return nil, "", err
 	}
@@ -57,6 +58,7 @@ func (s *StripeClient) createCheckoutSession(
 	ctx context.Context,
 	currency string,
 	items []CheckoutLineItem,
+	discountCents int64,
 	successURL, cancelURL string,
 	metadata map[string]string,
 ) (*stripe.CheckoutSession, error) {
@@ -80,6 +82,23 @@ func (s *StripeClient) createCheckoutSession(
 		SuccessURL: stripe.String(successURL),
 		CancelURL:  stripe.String(cancelURL),
 		Metadata:   metadata,
+	}
+
+	// A voucher is applied as a one-off, single-use amount-off coupon in the
+	// session's currency — Stripe line items can't be negative. Created per
+	// attempt, so a currency-fallback retry gets a coupon in the right currency.
+	if discountCents > 0 {
+		coupon, err := s.client.V1Coupons.Create(ctx, &stripe.CouponCreateParams{
+			AmountOff:      stripe.Int64(discountCents),
+			Currency:       stripe.String(currency),
+			Duration:       stripe.String("once"),
+			MaxRedemptions: stripe.Int64(1),
+			Name:           stripe.String("Voucher"),
+		})
+		if err != nil {
+			return nil, err
+		}
+		params.Discounts = []*stripe.CheckoutSessionCreateDiscountParams{{Coupon: stripe.String(coupon.ID)}}
 	}
 
 	return s.client.V1CheckoutSessions.Create(ctx, params)

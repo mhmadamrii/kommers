@@ -1,5 +1,5 @@
 import { A } from '@solidjs/router';
-import { MapPin, Plus, ShoppingBag } from 'lucide-solid';
+import { MapPin, Plus, ShoppingBag, Ticket, X } from 'lucide-solid';
 import { createSignal, For, Show } from 'solid-js';
 import { toast } from 'somoto';
 import { AddressForm } from '~/components/address-form';
@@ -7,23 +7,51 @@ import { Button } from '~/components/ui/button';
 import { Card } from '~/components/ui/card';
 import { EmptyState } from '~/components/empty-state';
 import { Skeleton } from '~/components/ui/skeleton';
+import { TextField, TextFieldInput } from '~/components/ui/text-field';
 import { ApiError } from '~/lib/api-client';
 import { formatPriceCents } from '~/lib/currency';
 import { useAddressesQuery, useCreateAddressMutation } from '~/queries/addresses';
 import { useCartQuery } from '~/queries/cart';
 import { useCheckoutMutation } from '~/queries/orders';
+import {
+  useAvailableVouchersQuery,
+  useValidateVoucherMutation,
+  voucherLabel,
+  type VoucherPreview,
+} from '~/queries/vouchers';
 
 export default function Checkout() {
   const cartQuery = useCartQuery();
   const addressesQuery = useAddressesQuery();
   const createAddress = useCreateAddressMutation();
   const checkout = useCheckoutMutation();
+  const vouchersQuery = useAvailableVouchersQuery();
+  const validateVoucher = useValidateVoucherMutation();
 
   const [selectedAddressId, setSelectedAddressId] = createSignal<number | null>(null);
   const [showAddressForm, setShowAddressForm] = createSignal(false);
+  const [voucherInput, setVoucherInput] = createSignal('');
+  const [appliedVoucher, setAppliedVoucher] = createSignal<VoucherPreview | null>(null);
 
   const items = () => cartQuery.data?.items ?? [];
   const addresses = () => addressesQuery.data ?? [];
+  const vouchers = () => vouchersQuery.data ?? [];
+  const payable = () => appliedVoucher()?.total_cents ?? cartQuery.data?.total_cents ?? 0;
+
+  function applyVoucher(code: string) {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    validateVoucher.mutate(trimmed, {
+      onSuccess: (preview) => {
+        setAppliedVoucher(preview);
+        setVoucherInput('');
+        toast.success(`Voucher ${preview.code} dipakai.`);
+      },
+      onError: (err) => {
+        toast.error(err instanceof ApiError ? err.message : 'Voucher tidak bisa dipakai.');
+      },
+    });
+  }
 
   function defaultSelection() {
     if (selectedAddressId() !== null) return selectedAddressId();
@@ -37,7 +65,7 @@ export default function Checkout() {
       toast.error('Pilih alamat pengiriman terlebih dahulu.');
       return;
     }
-    checkout.mutate(addressId, {
+    checkout.mutate({ addressId, voucherCode: appliedVoucher()?.code }, {
       onSuccess: (result) => {
         window.location.href = result.checkout_url;
       },
@@ -163,9 +191,91 @@ export default function Checkout() {
                     )}
                   </For>
                 </div>
+                <div class='flex flex-col gap-2 border-b border-border pb-3'>
+                  <Show
+                    when={appliedVoucher()}
+                    fallback={
+                      <>
+                        <form
+                          class='flex gap-2'
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            applyVoucher(voucherInput());
+                          }}
+                        >
+                          <TextField class='flex-1' value={voucherInput()} onChange={setVoucherInput}>
+                            <TextFieldInput
+                              class='w-full uppercase'
+                              placeholder='Kode voucher'
+                              aria-label='Kode voucher'
+                            />
+                          </TextField>
+                          <Button
+                            type='submit'
+                            variant='outline'
+                            disabled={validateVoucher.isPending || !voucherInput().trim()}
+                          >
+                            Pakai
+                          </Button>
+                        </form>
+                        <Show when={vouchers().filter((v) => !v.used_by_me).length > 0}>
+                          <div class='flex flex-col gap-1.5'>
+                            <For each={vouchers().filter((v) => !v.used_by_me)}>
+                              {(voucher) => (
+                                <button
+                                  type='button'
+                                  onClick={() => applyVoucher(voucher.code)}
+                                  class='flex items-center gap-2 rounded-lg border border-dashed border-primary/50 bg-primary/5 px-3 py-2 text-left text-xs transition-colors hover:bg-primary/10'
+                                >
+                                  <Ticket class='size-4 shrink-0 text-primary' aria-hidden='true' />
+                                  <span class='flex min-w-0 flex-col'>
+                                    <span class='font-semibold text-foreground'>
+                                      {voucher.code} · {voucherLabel(voucher)}
+                                    </span>
+                                    <span class='text-muted-foreground'>
+                                      {voucher.scope === 'seller' ? `Toko ${voucher.seller_name}` : 'Semua produk'}
+                                      <Show when={voucher.min_spend_cents > 0}>
+                                        {' '}· min. {formatPriceCents(voucher.min_spend_cents)}
+                                      </Show>
+                                    </span>
+                                  </span>
+                                </button>
+                              )}
+                            </For>
+                          </div>
+                        </Show>
+                      </>
+                    }
+                  >
+                    {(voucher) => (
+                      <div class='flex items-center justify-between gap-2 rounded-lg bg-primary/5 px-3 py-2 text-sm'>
+                        <span class='flex items-center gap-2 font-medium text-foreground'>
+                          <Ticket class='size-4 text-primary' aria-hidden='true' />
+                          {voucher().code}
+                        </span>
+                        <button
+                          type='button'
+                          aria-label='Hapus voucher'
+                          class='text-muted-foreground hover:text-foreground'
+                          onClick={() => setAppliedVoucher(null)}
+                        >
+                          <X class='size-4' aria-hidden='true' />
+                        </button>
+                      </div>
+                    )}
+                  </Show>
+                </div>
+                <Show when={appliedVoucher()}>
+                  {(voucher) => (
+                    <div class='flex items-center justify-between text-sm text-emerald-600'>
+                      <span>Diskon voucher</span>
+                      <span>-{formatPriceCents(voucher().discount_cents)}</span>
+                    </div>
+                  )}
+                </Show>
                 <div class='flex items-center justify-between text-sm font-semibold text-foreground'>
                   <span>Total</span>
-                  <span>{formatPriceCents(cartQuery.data?.total_cents ?? 0)}</span>
+                  <span>{formatPriceCents(payable())}</span>
                 </div>
                 <Button disabled={checkout.isPending} onClick={handlePay} class='w-full'>
                   {checkout.isPending ? 'Memproses...' : 'Bayar dengan Stripe'}

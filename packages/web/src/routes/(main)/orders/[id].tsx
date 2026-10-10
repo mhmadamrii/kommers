@@ -197,6 +197,13 @@ export default function OrderDetail() {
                   </For>
                 </div>
 
+                <Show when={order().discount_cents > 0}>
+                  <div class='flex items-center justify-between border-t border-border pt-3 text-sm text-emerald-600'>
+                    <span>Voucher {order().voucher_code}</span>
+                    <span>-{formatPriceCents(order().discount_cents)}</span>
+                  </div>
+                </Show>
+
                 <div class='flex items-center justify-between border-t border-border pt-3 text-sm font-semibold text-foreground'>
                   <span>Total</span>
                   <span>{formatPriceCents(order().total_cents)}</span>

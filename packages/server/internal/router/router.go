@@ -43,6 +43,8 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 	campaignHandler := handler.NewCampaignHandler(db)
 	reviewHandler := handler.NewReviewHandler(db, storageClient, cfg.S3PublicURL, cfg.S3Bucket)
 	wishlistHandler := handler.NewWishlistHandler(db, productHandler)
+	voucherHandler := handler.NewVoucherHandler(db)
+	flashSaleHandler := handler.NewFlashSaleHandler(db, productHandler)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -137,6 +139,7 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 
 			me.GET("/products", productHandler.ListMine)
 			me.GET("/wishlist", wishlistHandler.List)
+			me.GET("/vouchers", voucherHandler.Available)
 			me.GET("/orders/selling", middleware.RequireRole(model.RoleAdmin, model.RoleSeller), orderHandler.ListForSeller)
 		}
 
@@ -170,8 +173,24 @@ func New(db *gorm.DB, cfg config.Config, events handler.OrderEventPublisher, sto
 			orders.PATCH("/:id/shipping", middleware.RequireRole(model.RoleAdmin, model.RoleSeller), orderHandler.UpdateShipping)
 		}
 
-		// Merchant-only: no public campaign browsing endpoint — buyers only
-		// ever see the discount via a product's effective_price_cents.
+		// Public storefront view of live/upcoming campaigns (countdown + stock).
+		v1.GET("/flash-sales", flashSaleHandler.List)
+
+		vouchers := v1.Group("/vouchers")
+		vouchers.Use(middleware.RequireAuth(jwtSecret))
+		{
+			vouchers.POST("/validate", voucherHandler.Validate)
+			merchant := vouchers.Group("")
+			merchant.Use(middleware.RequireRole(model.RoleAdmin, model.RoleSeller))
+			{
+				merchant.POST("", voucherHandler.Create)
+				merchant.GET("", voucherHandler.List)
+				merchant.DELETE("/:id", voucherHandler.Delete)
+			}
+		}
+
+		// Merchant-only campaign management — buyers see these through
+		// GET /flash-sales and a product's effective_price_cents.
 		campaigns := v1.Group("/campaigns")
 		campaigns.Use(middleware.RequireAuth(jwtSecret), middleware.RequireRole(model.RoleAdmin, model.RoleSeller))
 		{

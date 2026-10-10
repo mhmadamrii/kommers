@@ -79,6 +79,9 @@ func (h *OrderHandler) primaryImageURL(images []model.ProductImage) string {
 
 type checkoutRequest struct {
 	AddressID uint `json:"address_id" binding:"required"`
+	// VoucherCode is optional; it's re-validated and locked inside the
+	// checkout transaction, never trusted from an earlier /vouchers/validate.
+	VoucherCode string `json:"voucher_code"`
 }
 
 type orderItemResponse struct {
@@ -102,6 +105,8 @@ type orderResponse struct {
 	Address        *addressResponse    `json:"address,omitempty"`
 	Currency       string              `json:"currency"`
 	TotalCents     int64               `json:"total_cents"`
+	VoucherCode    string              `json:"voucher_code,omitempty"`
+	DiscountCents  int64               `json:"discount_cents"`
 	Items          []orderItemResponse `json:"items"`
 	TrackingNumber string              `json:"tracking_number,omitempty"`
 	Courier        string              `json:"courier,omitempty"`
@@ -141,6 +146,8 @@ func (h *OrderHandler) newOrderResponse(o model.Order) orderResponse {
 		AddressID:      o.AddressID,
 		Currency:       o.Currency,
 		TotalCents:     o.TotalCents,
+		VoucherCode:    o.VoucherCode,
+		DiscountCents:  o.DiscountCents,
 		Items:          items,
 		TrackingNumber: o.TrackingNumber,
 		Courier:        o.Courier,
@@ -218,6 +225,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		}
 
 		var total int64
+		var lines []pricing.Line
 		for _, item := range cart.Items {
 			// Lock the row so two concurrent checkouts can't both read stale stock
 			// and both succeed past the check below (overselling).
@@ -263,6 +271,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 
 			subtotal := priceCents * int64(item.Quantity)
 			total += subtotal
+			lines = append(lines, pricing.Line{OwnerID: product.OwnerID, SubtotalCents: subtotal})
 			orderItem := model.OrderItem{
 				OrderID:       order.ID,
 				ProductID:     item.ProductID,
@@ -275,6 +284,27 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 			if err := tx.Create(&orderItem).Error; err != nil {
 				return err
 			}
+		}
+
+		if code := pricing.NormalizeCode(req.VoucherCode); code != "" {
+			var voucher model.Voucher
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("code = ?", code).First(&voucher).Error; err != nil {
+				return pricing.ErrVoucherNotFound
+			}
+			if err := pricing.CheckVoucherUsable(tx, voucher, userID); err != nil {
+				return err
+			}
+			discount, err := pricing.VoucherDiscount(voucher, pricing.OwnerIsAdmin(tx, voucher), lines)
+			if err != nil {
+				return err
+			}
+			if err := redeemVoucher(tx, voucher.ID, userID, order.ID); err != nil {
+				return err
+			}
+			order.VoucherID = &voucher.ID
+			order.VoucherCode = voucher.Code
+			order.DiscountCents = discount
+			total -= discount
 		}
 
 		order.TotalCents = total
@@ -318,7 +348,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	cancelURL := fmt.Sprintf("%s/orders/%d?payment=cancelled", h.FrontendURL, order.ID)
 
 	session, currencyUsed, err := h.Stripe.CreateCheckoutSessionWithFallback(
-		c.Request.Context(), "idr", "usd", lineItems, successURL, cancelURL,
+		c.Request.Context(), "idr", "usd", lineItems, order.DiscountCents, successURL, cancelURL,
 		map[string]string{"order_id": strconv.FormatUint(uint64(order.ID), 10)},
 	)
 	if err != nil {
@@ -423,6 +453,18 @@ func (h *OrderHandler) RetryPayment(c *gin.Context) {
 					}
 				}
 			}
+			if order.VoucherID != nil {
+				var voucher model.Voucher
+				if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&voucher, *order.VoucherID).Error; err != nil {
+					return pricing.ErrVoucherNotFound
+				}
+				if err := pricing.CheckVoucherUsable(tx, voucher, userID); err != nil {
+					return err
+				}
+				if err := redeemVoucher(tx, voucher.ID, userID, order.ID); err != nil {
+					return err
+				}
+			}
 			return tx.Model(&model.Order{}).Where("id = ?", order.ID).
 				Updates(map[string]interface{}{"status": model.OrderStatusPending, "payment_status": model.PaymentStatusPending}).Error
 		})
@@ -447,7 +489,7 @@ func (h *OrderHandler) RetryPayment(c *gin.Context) {
 	cancelURL := fmt.Sprintf("%s/orders/%d?payment=cancelled", h.FrontendURL, order.ID)
 
 	session, currencyUsed, err := h.Stripe.CreateCheckoutSessionWithFallback(
-		c.Request.Context(), "idr", "usd", lineItems, successURL, cancelURL,
+		c.Request.Context(), "idr", "usd", lineItems, order.DiscountCents, successURL, cancelURL,
 		map[string]string{"order_id": strconv.FormatUint(uint64(order.ID), 10)},
 	)
 	if err != nil {
@@ -510,9 +552,42 @@ func (h *OrderHandler) restoreStockAndCancel(order model.Order, newStatus model.
 				}
 			}
 		}
+		if err := releaseVoucher(tx, order.ID); err != nil {
+			return err
+		}
 		return tx.Model(&model.Order{}).Where("id = ?", order.ID).
 			Updates(map[string]interface{}{"status": newStatus, "payment_status": newPaymentStatus}).Error
 	})
+}
+
+// redeemVoucher records the buyer's use and bumps the voucher's used_count.
+// The caller must hold the voucher row lock so the usage-limit check it just
+// ran can't race another checkout.
+func redeemVoucher(tx *gorm.DB, voucherID, userID, orderID uint) error {
+	if err := tx.Create(&model.VoucherRedemption{VoucherID: voucherID, UserID: userID, OrderID: orderID}).Error; err != nil {
+		return err
+	}
+	return tx.Model(&model.Voucher{}).Where("id = ?", voucherID).
+		UpdateColumn("used_count", gorm.Expr("used_count + 1")).Error
+}
+
+// releaseVoucher gives a cancelled order's voucher back. Hard delete (same
+// reason as CartItem): a soft-deleted redemption would still occupy the
+// unique order_id slot and break a later retry-payment re-redeem. A no-op if
+// the order never redeemed one, so it's safe on repeat calls.
+func releaseVoucher(tx *gorm.DB, orderID uint) error {
+	var redemption model.VoucherRedemption
+	if err := tx.Where("order_id = ?", orderID).First(&redemption).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	if err := tx.Unscoped().Delete(&redemption).Error; err != nil {
+		return err
+	}
+	return tx.Model(&model.Voucher{}).Where("id = ?", redemption.VoucherID).
+		UpdateColumn("used_count", gorm.Expr("used_count - 1")).Error
 }
 
 // StripeWebhook godoc

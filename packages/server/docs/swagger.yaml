@@ -240,6 +240,11 @@ definitions:
     properties:
       address_id:
         type: integer
+      voucher_code:
+        description: |-
+          VoucherCode is optional; it's re-validated and locked inside the
+          checkout transaction, never trusted from an earlier /vouchers/validate.
+        type: string
     required:
     - address_id
     type: object
@@ -259,6 +264,8 @@ definitions:
         type: string
       delivered_at:
         type: string
+      discount_cents:
+        type: integer
       id:
         type: integer
       items:
@@ -275,6 +282,87 @@ definitions:
         type: integer
       tracking_number:
         type: string
+      voucher_code:
+        type: string
+    type: object
+  internal_handler.flashSaleProduct:
+    properties:
+      average_rating:
+        description: |-
+          AverageRating/ReviewCount are computed from real Review rows — zero
+          when nobody has reviewed yet, never a placeholder or fabricated value.
+        type: number
+      campaign_ends_at:
+        type: string
+      campaign_id:
+        type: integer
+      category_id:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      effective_price_cents:
+        type: integer
+      free_shipping:
+        type: boolean
+      id:
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/internal_handler.productImageResponse'
+        type: array
+      is_active:
+        type: boolean
+      location:
+        type: string
+      name:
+        type: string
+      owner:
+        $ref: '#/definitions/internal_handler.ownerResponse'
+      price_cents:
+        description: |-
+          PriceCents is the base price; EffectivePriceCents is what a buyer pays
+          right now (equal to PriceCents when no campaign is live).
+        type: integer
+      review_count:
+        type: integer
+      sale_price_cents:
+        type: integer
+      slug:
+        type: string
+      stock:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  internal_handler.flashSaleResponse:
+    properties:
+      discount_type:
+        $ref: '#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType'
+      discount_value:
+        type: integer
+      ends_at:
+        type: string
+      free_shipping:
+        type: boolean
+      id:
+        type: integer
+      name:
+        type: string
+      products:
+        items:
+          $ref: '#/definitions/internal_handler.flashSaleProduct'
+        type: array
+      starts_at:
+        type: string
+      status:
+        description: '"live" | "upcoming"'
+        type: string
+      stock_limit:
+        type: integer
+      stock_used:
+        type: integer
     type: object
   internal_handler.loginRequest:
     properties:
@@ -323,6 +411,8 @@ definitions:
         type: string
       delivered_at:
         type: string
+      discount_cents:
+        type: integer
       id:
         type: integer
       items:
@@ -338,6 +428,8 @@ definitions:
       total_cents:
         type: integer
       tracking_number:
+        type: string
+      voucher_code:
         type: string
     type: object
   internal_handler.ownerResponse:
@@ -526,6 +618,98 @@ definitions:
         type: integer
       role:
         $ref: '#/definitions/github_com_mhmadamrii_kommers_server_internal_model.Role'
+    type: object
+  internal_handler.validateVoucherRequest:
+    properties:
+      code:
+        type: string
+    required:
+    - code
+    type: object
+  internal_handler.validateVoucherResponse:
+    properties:
+      code:
+        type: string
+      discount_cents:
+        type: integer
+      name:
+        type: string
+      subtotal_cents:
+        type: integer
+      total_cents:
+        type: integer
+    type: object
+  internal_handler.voucherRequest:
+    properties:
+      code:
+        type: string
+      discount_type:
+        allOf:
+        - $ref: '#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType'
+        enum:
+        - percent
+        - fixed
+      discount_value:
+        type: integer
+      ends_at:
+        type: string
+      max_discount_cents:
+        type: integer
+      min_spend_cents:
+        minimum: 0
+        type: integer
+      name:
+        type: string
+      per_user_limit:
+        type: integer
+      starts_at:
+        type: string
+      usage_limit:
+        type: integer
+    required:
+    - code
+    - discount_type
+    - discount_value
+    - ends_at
+    - name
+    - starts_at
+    type: object
+  internal_handler.voucherResponse:
+    properties:
+      code:
+        type: string
+      discount_type:
+        $ref: '#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType'
+      discount_value:
+        type: integer
+      ends_at:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      max_discount_cents:
+        type: integer
+      min_spend_cents:
+        type: integer
+      name:
+        type: string
+      per_user_limit:
+        type: integer
+      scope:
+        description: '"platform" (admin) or "seller"'
+        type: string
+      seller_name:
+        type: string
+      starts_at:
+        type: string
+      usage_limit:
+        type: integer
+      used_by_me:
+        description: UsedByMe is only set on the buyer-facing available list.
+        type: boolean
+      used_count:
+        type: integer
     type: object
 info:
   contact: {}
@@ -982,6 +1166,20 @@ paths:
         only mounted when ENV=development)
       tags:
       - dev
+  /api/v1/flash-sales:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.flashSaleResponse'
+            type: array
+      summary: List live and soon-starting flash sales (public)
+      tags:
+      - flash-sales
   /api/v1/me:
     get:
       produces:
@@ -1203,6 +1401,22 @@ paths:
       summary: List the authenticated seller's own products (active and inactive)
       tags:
       - products
+  /api/v1/me/vouchers:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.voucherResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List vouchers a buyer can currently use
+      tags:
+      - vouchers
   /api/v1/me/wishlist:
     get:
       produces:
@@ -1863,6 +2077,119 @@ paths:
       summary: Apply to become a seller
       tags:
       - sellers
+  /api/v1/vouchers:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler.voucherResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List vouchers (admin sees all, seller sees their own)
+      tags:
+      - vouchers
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Voucher payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.voucherRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_handler.voucherResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 'Create a voucher (admin: platform-wide; seller: own products only)'
+      tags:
+      - vouchers
+  /api/v1/vouchers/{id}:
+    delete:
+      parameters:
+      - description: Voucher ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a voucher (admin, or the owning seller)
+      tags:
+      - vouchers
+  /api/v1/vouchers/validate:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Voucher code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.validateVoucherRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.validateVoucherResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Preview a voucher against the current cart
+      tags:
+      - vouchers
   /api/v1/webhooks/stripe:
     post:
       consumes:

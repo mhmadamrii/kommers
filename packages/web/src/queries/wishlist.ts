@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
-import { apiFetch, canResolveSession } from '~/lib/api-client';
+import { ApiError, apiFetch, canResolveSession } from '~/lib/api-client';
 import type { Product } from '~/queries/products';
 
 export const WISHLIST_QUERY_KEY = ['wishlist'] as const;
@@ -7,10 +7,22 @@ export const WISHLIST_QUERY_KEY = ['wishlist'] as const;
 // Matches GET /api/v1/me/wishlist — the server formats saved products
 // through the same builder GET /products uses, so the shape here is
 // identical to Product, not a separate wishlist-item wrapper.
+//
+// A logged-out visitor is the default state, not a failure: 401 resolves to
+// an empty list (like useMeQuery) instead of throwing, which would retry and
+// then blank the page through the unhandled query error.
 export function useWishlistQuery() {
   return useQuery(() => ({
     queryKey: WISHLIST_QUERY_KEY,
-    queryFn: () => apiFetch<Product[]>('/api/v1/me/wishlist'),
+    queryFn: async () => {
+      try {
+        return await apiFetch<Product[]>('/api/v1/me/wishlist');
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) return [];
+        throw err;
+      }
+    },
+    retry: false,
     enabled: canResolveSession(),
   }));
 }

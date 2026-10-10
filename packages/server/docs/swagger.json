@@ -710,6 +710,28 @@
                 }
             }
         },
+        "/api/v1/flash-sales": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "flash-sales"
+                ],
+                "summary": "List live and soon-starting flash sales (public)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_handler.flashSaleResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/me": {
             "get": {
                 "security": [
@@ -1059,6 +1081,33 @@
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/internal_handler.productResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/vouchers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vouchers"
+                ],
+                "summary": "List vouchers a buyer can currently use",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_handler.voucherResponse"
                             }
                         }
                     }
@@ -2093,6 +2142,188 @@
                 }
             }
         },
+        "/api/v1/vouchers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vouchers"
+                ],
+                "summary": "List vouchers (admin sees all, seller sees their own)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_handler.voucherResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vouchers"
+                ],
+                "summary": "Create a voucher (admin: platform-wide; seller: own products only)",
+                "parameters": [
+                    {
+                        "description": "Voucher payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.voucherRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.voucherResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vouchers/validate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vouchers"
+                ],
+                "summary": "Preview a voucher against the current cart",
+                "parameters": [
+                    {
+                        "description": "Voucher code",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.validateVoucherRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.validateVoucherResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vouchers/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "vouchers"
+                ],
+                "summary": "Delete a voucher (admin, or the owning seller)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Voucher ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/webhooks/stripe": {
             "post": {
                 "consumes": [
@@ -2597,6 +2828,10 @@
             "properties": {
                 "address_id": {
                     "type": "integer"
+                },
+                "voucher_code": {
+                    "description": "VoucherCode is optional; it's re-validated and locked inside the\ncheckout transaction, never trusted from an earlier /vouchers/validate.",
+                    "type": "string"
                 }
             }
         },
@@ -2624,6 +2859,9 @@
                 "delivered_at": {
                     "type": "string"
                 },
+                "discount_cents": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -2647,6 +2885,121 @@
                 },
                 "tracking_number": {
                     "type": "string"
+                },
+                "voucher_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.flashSaleProduct": {
+            "type": "object",
+            "properties": {
+                "average_rating": {
+                    "description": "AverageRating/ReviewCount are computed from real Review rows — zero\nwhen nobody has reviewed yet, never a placeholder or fabricated value.",
+                    "type": "number"
+                },
+                "campaign_ends_at": {
+                    "type": "string"
+                },
+                "campaign_id": {
+                    "type": "integer"
+                },
+                "category_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "effective_price_cents": {
+                    "type": "integer"
+                },
+                "free_shipping": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler.productImageResponse"
+                    }
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "$ref": "#/definitions/internal_handler.ownerResponse"
+                },
+                "price_cents": {
+                    "description": "PriceCents is the base price; EffectivePriceCents is what a buyer pays\nright now (equal to PriceCents when no campaign is live).",
+                    "type": "integer"
+                },
+                "review_count": {
+                    "type": "integer"
+                },
+                "sale_price_cents": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "stock": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.flashSaleResponse": {
+            "type": "object",
+            "properties": {
+                "discount_type": {
+                    "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType"
+                },
+                "discount_value": {
+                    "type": "integer"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "free_shipping": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler.flashSaleProduct"
+                    }
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "\"live\" | \"upcoming\"",
+                    "type": "string"
+                },
+                "stock_limit": {
+                    "type": "integer"
+                },
+                "stock_used": {
+                    "type": "integer"
                 }
             }
         },
@@ -2721,6 +3074,9 @@
                 "delivered_at": {
                     "type": "string"
                 },
+                "discount_cents": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -2743,6 +3099,9 @@
                     "type": "integer"
                 },
                 "tracking_number": {
+                    "type": "string"
+                },
+                "voucher_code": {
                     "type": "string"
                 }
             }
@@ -3020,6 +3379,144 @@
                 },
                 "role": {
                     "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.Role"
+                }
+            }
+        },
+        "internal_handler.validateVoucherRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.validateVoucherResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "discount_cents": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subtotal_cents": {
+                    "type": "integer"
+                },
+                "total_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.voucherRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "discount_type",
+                "discount_value",
+                "ends_at",
+                "name",
+                "starts_at"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "enum": [
+                        "percent",
+                        "fixed"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType"
+                        }
+                    ]
+                },
+                "discount_value": {
+                    "type": "integer"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "max_discount_cents": {
+                    "type": "integer"
+                },
+                "min_spend_cents": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "name": {
+                    "type": "string"
+                },
+                "per_user_limit": {
+                    "type": "integer"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "usage_limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler.voucherResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "$ref": "#/definitions/github_com_mhmadamrii_kommers_server_internal_model.DiscountType"
+                },
+                "discount_value": {
+                    "type": "integer"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "max_discount_cents": {
+                    "type": "integer"
+                },
+                "min_spend_cents": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "per_user_limit": {
+                    "type": "integer"
+                },
+                "scope": {
+                    "description": "\"platform\" (admin) or \"seller\"",
+                    "type": "string"
+                },
+                "seller_name": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "usage_limit": {
+                    "type": "integer"
+                },
+                "used_by_me": {
+                    "description": "UsedByMe is only set on the buyer-facing available list.",
+                    "type": "boolean"
+                },
+                "used_count": {
+                    "type": "integer"
                 }
             }
         }

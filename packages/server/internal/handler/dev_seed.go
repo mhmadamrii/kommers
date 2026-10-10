@@ -99,7 +99,7 @@ func (h *DevHandler) Seed(c *gin.Context) {
 	}
 
 	productsSeeded := 0
-	var onSaleProductIDs []uint
+	var onSaleProductIDs, flashProductIDs []uint
 	for _, sp := range seedProducts {
 		category, ok := categoryBySlug[sp.CategorySlug]
 		if !ok {
@@ -112,6 +112,8 @@ func (h *DevHandler) Seed(c *gin.Context) {
 		if err == nil {
 			if sp.OnSale {
 				onSaleProductIDs = append(onSaleProductIDs, existing.ID)
+			} else {
+				flashProductIDs = append(flashProductIDs, existing.ID)
 			}
 			continue // already seeded
 		}
@@ -138,6 +140,8 @@ func (h *DevHandler) Seed(c *gin.Context) {
 		productsSeeded++
 		if sp.OnSale {
 			onSaleProductIDs = append(onSaleProductIDs, product.ID)
+		} else {
+			flashProductIDs = append(flashProductIDs, product.ID)
 		}
 	}
 
@@ -173,13 +177,26 @@ func (h *DevHandler) Seed(c *gin.Context) {
 		}
 	}
 
+	flashCreated, err := h.seedFlashSale(seller.ID, flashProductIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	vouchersCreated, err := h.seedVouchers(admin.ID, seller.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"admin_email":      admin.Email,
-		"seller_email":     seller.Email,
-		"password":         seedPassword,
-		"categories":       len(categoryBySlug),
-		"products_seeded":  productsSeeded,
-		"campaign_created": campaignCreated,
+		"flash_sale_created": flashCreated,
+		"vouchers_created":   vouchersCreated,
+		"admin_email":        admin.Email,
+		"seller_email":       seller.Email,
+		"password":           seedPassword,
+		"categories":         len(categoryBySlug),
+		"products_seeded":    productsSeeded,
+		"campaign_created":   campaignCreated,
 	})
 }
 
@@ -208,4 +225,75 @@ func (h *DevHandler) seedUser(email, fullName string, role model.Role) (model.Us
 		return model.User{}, err
 	}
 	return user, nil
+}
+
+// seedFlashSale adds a short, stock-capped campaign on the products the
+// "Gajian Sale" doesn't already cover, so the storefront's flash-sale strip
+// has something live with a visible countdown and a "units left" bar.
+func (h *DevHandler) seedFlashSale(sellerID uint, productIDs []uint) (bool, error) {
+	if len(productIDs) == 0 {
+		return false, nil
+	}
+	var existing model.Campaign
+	err := h.DB.Where("name = ?", "Flash Sale Kilat").First(&existing).Error
+	if err == nil {
+		return false, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, err
+	}
+	products := make([]model.Product, len(productIDs))
+	for i, id := range productIDs {
+		products[i] = model.Product{Model: gorm.Model{ID: id}}
+	}
+	limit := 40
+	camp := model.Campaign{
+		Name:          "Flash Sale Kilat",
+		OwnerID:       sellerID,
+		DiscountType:  model.DiscountTypePercent,
+		DiscountValue: 50,
+		StartsAt:      time.Now(),
+		EndsAt:        time.Now().Add(6 * time.Hour),
+		StockLimit:    &limit,
+		IsActive:      true,
+		Products:      products,
+	}
+	return true, h.DB.Create(&camp).Error
+}
+
+// seedVouchers adds one platform-wide percent voucher (admin) and one
+// seller-scoped fixed voucher, both valid for 30 days.
+func (h *DevHandler) seedVouchers(adminID, sellerID uint) (int, error) {
+	capCents := int64(5000000) // Rp50.000
+	seeds := []model.Voucher{
+		{
+			Code: "HEMAT10", Name: "Diskon 10% semua produk", OwnerID: adminID,
+			DiscountType: model.DiscountTypePercent, DiscountValue: 10,
+			MaxDiscountCents: &capCents, MinSpendCents: 10000000, PerUserLimit: 1,
+		},
+		{
+			Code: "TOKO20K", Name: "Potongan Rp20.000 dari toko", OwnerID: sellerID,
+			DiscountType: model.DiscountTypeFixed, DiscountValue: 2000000,
+			MinSpendCents: 5000000, PerUserLimit: 2,
+		},
+	}
+	created := 0
+	for _, v := range seeds {
+		var existing model.Voucher
+		err := h.DB.Where("code = ?", v.Code).First(&existing).Error
+		if err == nil {
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return created, err
+		}
+		v.StartsAt = time.Now().Add(-time.Hour)
+		v.EndsAt = time.Now().Add(30 * 24 * time.Hour)
+		v.IsActive = true
+		if err := h.DB.Create(&v).Error; err != nil {
+			return created, err
+		}
+		created++
+	}
+	return created, nil
 }

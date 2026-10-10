@@ -49,6 +49,9 @@ All routes are prefixed `/api/v1`. Health checks (`/healthz`, `/readyz`) and `/s
 | Checkout   | `POST /checkout` (cart → order, stock decremented transactionally, starts a Stripe Checkout Session) | authenticated user |
 | Orders     | `GET /orders`, `GET /orders/:id`                                       | own orders, or any order if admin    |
 | Stripe webhook | `POST /webhooks/stripe` (`checkout.session.completed` → mark paid; `checkout.session.expired` → cancel order, restore stock) | public, verified via `Stripe-Signature` |
+| Flash sales | `GET /flash-sales` (live + next-24h campaigns with products, sale price, stock left) | public |
+| Vouchers   | `GET /me/vouchers` (usable now), `POST /vouchers/validate` (preview against cart); `checkout` takes optional `voucher_code` | authenticated user |
+|            | `POST/GET/DELETE /vouchers...` (admin: platform-wide, seller: own products' lines only) | admin / seller |
 | Reviews    | `GET /products/:slug/reviews`, `GET /products/:slug/reviews/eligibility` | public / authenticated user |
 |            | `POST /products/:slug/reviews`, `POST /reviews/:id/images`             | authenticated user who purchased the product |
 

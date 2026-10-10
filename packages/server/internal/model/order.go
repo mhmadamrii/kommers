@@ -67,13 +67,18 @@ type Order struct {
 	PaymentRef      string `gorm:"size:255;index"`
 	// Currency actually charged via Stripe — may fall back from the store's
 	// nominal "idr" to "usd" if the Stripe account can't present IDR.
-	Currency   string      `gorm:"size:3;not null;default:idr"`
-	TotalCents int64       `gorm:"not null"`
-	Items      []OrderItem `gorm:"foreignKey:OrderID"`
+	Currency   string `gorm:"size:3;not null;default:idr"`
+	TotalCents int64  `gorm:"not null"`
+	// DiscountCents is the voucher discount already subtracted from
+	// TotalCents (items' SubtotalCents still sum to the pre-voucher amount).
+	VoucherID     *uint       `gorm:"index"`
+	VoucherCode   string      `gorm:"size:40"`
+	DiscountCents int64       `gorm:"not null;default:0"`
+	Items         []OrderItem `gorm:"foreignKey:OrderID"`
 	// Shipping fields are seller-entered once Status reaches processing/shipped —
 	// there's no carrier integration, this is a manually-updated tracking record.
-	TrackingNumber string     `gorm:"size:100"`
-	Courier        string     `gorm:"size:100"`
+	TrackingNumber string `gorm:"size:100"`
+	Courier        string `gorm:"size:100"`
 	ShippedAt      *time.Time
 	DeliveredAt    *time.Time
 }
